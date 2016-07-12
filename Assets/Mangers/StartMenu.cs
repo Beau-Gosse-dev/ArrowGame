@@ -2,6 +2,8 @@
 using UnityEngine.UI;
 using System.Collections;
 using Parse;
+using UnityEngine.SceneManagement;
+using Assets.Mangers;
 
 public class StartMenu : MonoBehaviour
 {
@@ -22,29 +24,29 @@ public class StartMenu : MonoBehaviour
     public void onHumanClicked()
     {
         LevelDefinition.gameType = GameType.Local;
-        Application.LoadLevel("Human");
+        SceneManager.LoadScene("Human");
     } // End onHumanClicked    
     public void onComputerClicked(){
         LevelDefinition.LevelDefinitionSetDefault();
         LevelDefinition.gameType = GameType.Computer;
         LevelDefinition.WallPosition = -1;
-        Application.LoadLevel("Computer");
+        SceneManager.LoadScene("Computer");
     } // End onHumanClicked
 
     public void onSettingsClicked()
     {
-        Application.LoadLevel("Settings");
+        SceneManager.LoadScene("Settings");
     } // End onSettingsClicked
 
     public void onFriendClicked()
     {
         if(ParseUser.CurrentUser != null)
         {
-            Application.LoadLevel("CurrentMatches");
+            SceneManager.LoadScene("CurrentMatches");
         }
         else
         {
-            Application.LoadLevel("CreateAccount");
+            SceneManager.LoadScene("CreateAccount");
         }
     } // End onFriendClicked
 }

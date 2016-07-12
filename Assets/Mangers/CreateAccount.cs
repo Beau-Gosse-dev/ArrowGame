@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System;
 using Facebook.Unity;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 public class CreateAccount : MonoBehaviour
 {
@@ -160,12 +161,12 @@ public class CreateAccount : MonoBehaviour
 
     private void LoadFriendSearch()
     {
-        Application.LoadLevel("FriendSearch");
+        SceneManager.LoadScene("FriendSearch");
     }
 
     private void LoadCreateMatch()
     {
-        Application.LoadLevel("CreateMatch");
+        SceneManager.LoadScene("CreateMatch");
     }
 
     public void ShowErrorText(object error)

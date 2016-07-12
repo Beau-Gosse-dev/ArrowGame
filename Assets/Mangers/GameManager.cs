@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public static class GameManager
 {
@@ -46,7 +47,7 @@ public static class GameManager
 
     public static void loadFriendSeach()
     {
-        Application.LoadLevel("FriendSearch");
+        SceneManager.LoadScene("FriendSearch");
     }
     
 }

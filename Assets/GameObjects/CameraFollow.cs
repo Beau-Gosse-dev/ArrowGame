@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Assets.Mangers;
 
 public class CameraFollow : MonoBehaviour 
 {
@@ -79,7 +80,6 @@ public class CameraFollow : MonoBehaviour
         {
             transform.position = new Vector3(transform.position.x, 6.0f + Camera.main.orthographicSize - 7.0f, transform.position.z);
         }
-        Debug.Log(transform.position.y);
     }
 
     public void PauseInSeconds(float seconds)

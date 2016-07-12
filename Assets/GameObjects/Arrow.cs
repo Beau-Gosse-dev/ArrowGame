@@ -2,11 +2,12 @@
 using System.Collections;
 using System;
 using System.Collections.Generic;
+using Assets.Mangers;
 
 public class Arrow : MonoBehaviour
 {
     Rigidbody2D arrow;
-    public AimLine aimLine;
+    public AimLineFriend aimLine;
     public Transform playerLeftTransform;
     public Transform playerRightTransform;
     public Player playerLeft;

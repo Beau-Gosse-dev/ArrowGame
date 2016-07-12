@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
-
+using Assets.Mangers;
 
 public class AimLineOld : MonoBehaviour
 {

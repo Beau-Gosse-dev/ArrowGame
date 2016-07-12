@@ -4,7 +4,7 @@ using System;
 using Parse;
 using Assets.Mangers;
 
-public class AimLine : MonoBehaviour
+public class AimLineFriend : MonoBehaviour
 {
 
     public Arrow activeArrow;
@@ -299,8 +299,8 @@ public class AimLine : MonoBehaviour
                 && !cameraFollow.Paused 
                 && !cameraFollow.IsMoving() 
                 && LevelDefinition.gameState == GameState.Playing
-                && ((LevelDefinition.IsPlayerLeftTurn)
-                    || (!LevelDefinition.IsPlayerLeftTurn))
+                && ((LevelDefinition.IsPlayerLeftTurn && ParseUser.CurrentUser.ObjectId == LevelDefinition.PlayerLeftId)
+                    || (!LevelDefinition.IsPlayerLeftTurn && ParseUser.CurrentUser.ObjectId == LevelDefinition.PlayerRightId))
                 )
             {
                 if (Input.GetMouseButton(0))

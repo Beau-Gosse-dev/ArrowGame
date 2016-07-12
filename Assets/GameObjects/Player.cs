@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Assets.Mangers;
 
 // Left shooter goes first, so it has different behavior from right shooter
 public class Player : MonoBehaviour {

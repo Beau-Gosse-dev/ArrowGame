@@ -4,6 +4,7 @@ using System.Collections;
 using Parse;
 using System.Collections.Generic;
 using System;
+using UnityEngine.SceneManagement;
 
 public class FriendSearch : MonoBehaviour {
     
@@ -22,7 +23,7 @@ public class FriendSearch : MonoBehaviour {
 
     public void GoToCreateMatch()
     {
-        Application.LoadLevel("CreateMatch");
+        SceneManager.LoadScene("CreateMatch");
     }
 
     public void SearchUser ()

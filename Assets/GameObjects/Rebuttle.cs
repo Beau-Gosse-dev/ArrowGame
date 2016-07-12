@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using Assets.Mangers;
 
 public class Rebuttle : MonoBehaviour {
 

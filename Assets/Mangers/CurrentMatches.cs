@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Parse;
 using System.Threading.Tasks;
+using UnityEngine.SceneManagement;
 
 public class CurrentMatches : MonoBehaviour {
 
@@ -94,11 +95,11 @@ public class CurrentMatches : MonoBehaviour {
 
     public void loadFriendSeach()
     {
-        Application.LoadLevel("FriendSearch");
+        SceneManager.LoadScene("FriendSearch");
     }
 
     public void loadCreateMatch()
     {
-        Application.LoadLevel("CreateMatch");
+        SceneManager.LoadScene("CreateMatch");
     }
 }

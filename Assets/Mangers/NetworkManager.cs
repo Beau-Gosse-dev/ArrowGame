@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System;
 using Parse;
+using UnityEngine.SceneManagement;
 
 class NetworkManager : MonoBehaviour
 {
@@ -73,7 +74,7 @@ class NetworkManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         // Now that the network manager is ready, head to the menu
-        Application.LoadLevel("StartMenu");
+        SceneManager.LoadScene("StartMenu");
     }
     #endregion
 

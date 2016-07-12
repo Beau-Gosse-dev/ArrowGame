@@ -2,6 +2,7 @@
 using System.Collections;
 using Parse;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class Settings : MonoBehaviour {
 
@@ -11,7 +12,7 @@ public class Settings : MonoBehaviour {
     public Text ButtonText;
     public void Start()
     {
-        BackButton.onClick.AddListener(() => { Application.LoadLevel("StartMenu"); });
+        BackButton.onClick.AddListener(() => { SceneManager.LoadScene("StartMenu"); });
         if (ParseUser.CurrentUser != null)
         {
             LogoutButton.enabled = true;
@@ -30,7 +31,7 @@ public class Settings : MonoBehaviour {
         PendingImage.enabled = true;
         if (ParseUser.CurrentUser == null)
         {
-            Application.LoadLevel("CreateAccount");
+            SceneManager.LoadScene("CreateAccount");
         }
         else
         {

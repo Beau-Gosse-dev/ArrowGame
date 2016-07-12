@@ -2,14 +2,11 @@
 using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
-using Parse;
-using System.IO;
-using Newtonsoft.Json;
 using System;
 using UnityEngine.SceneManagement;
 using Assets.Mangers;
 
-public class LevelManager : MonoBehaviour
+public class LevelManagerFriend : MonoBehaviour
 {
     public Player playerLeft;
     public Player playerRight;
@@ -17,13 +14,12 @@ public class LevelManager : MonoBehaviour
     public Arrow arrow;
     public Canvas endGameCanvas;
     public Score score;
+    public AimLineFriend aimLine;
     public Canvas worldCanvas;
-    public AimLine aimLine;
     public RawImage fader;
 
     private Color replayColor = new Color(0, 0, 0, 0.5f);
     private Color playingColor = new Color(0, 0, 0, 0f);
-
 
     // For creating the wall
     public GameObject Brick;
@@ -46,15 +42,15 @@ public class LevelManager : MonoBehaviour
 
     void Update()
     {
-        //if (LevelDefinition.gameState == GameState.ShowLastMove)
-        //{
-        //    // Lerp the colour of the texture between itself and black.
-        //    fader.color = Color.Lerp(fader.color, replayColor, 1.5f * Time.deltaTime);
-        //}
-        //else
-        //{
-        //    fader.color = Color.Lerp(fader.color, playingColor, 1.5f * Time.deltaTime);
-        //}
+        if (LevelDefinition.gameState == GameState.ShowLastMove)
+        {
+            // Lerp the colour of the texture between itself and black.
+            fader.color = Color.Lerp(fader.color, replayColor, 1.5f * Time.deltaTime);
+        }
+        else
+        {
+            fader.color = Color.Lerp(fader.color, playingColor, 1.5f * Time.deltaTime);
+        }
     }
 
     private void AddWalls(float baseYPosition, int numBricks)
@@ -193,3 +189,4 @@ public class LevelManager : MonoBehaviour
         throw new NotImplementedException();
     }
 }
+
