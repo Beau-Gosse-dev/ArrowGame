@@ -10,7 +10,7 @@ class NetworkManager : MonoBehaviour
 {
     #region One-time Creation
     public static NetworkManager Instance { get; private set; }
-    public GameUser CurrentUser { get; private set; }
+    public GameUser CurrentUser { get; set; }
 
     void Awake()
     {
@@ -23,7 +23,8 @@ class NetworkManager : MonoBehaviour
         // This NetworkManager object will persist until the game is closed
         DontDestroyOnLoad(gameObject);
 
-        CurrentUser = new GameUser();
+        // TODO: Apparently you can't call any parse stuff until this scene has finished. Maybe we need to wrap the Parse stuff in a outer scene that loads this one.
+        //CurrentUser = new GameUser();
 
         // Now that the network manager is ready, head to the menu
         SceneManager.LoadScene("StartMenu");
@@ -37,6 +38,7 @@ class NetworkManager : MonoBehaviour
             LevelManager.quitPlaying();
         }
     }
+
 
     public Task<List<Match>> GetMatchesAsync()
     {

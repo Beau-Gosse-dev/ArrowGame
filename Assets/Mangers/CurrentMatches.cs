@@ -20,6 +20,21 @@ public class CurrentMatches : MonoBehaviour {
         myUsername.text = _networkManager.CurrentUser.UserName;
         LoadMatchButtonsAsync();
     }
+    public void LoadMatchButtonsAsync()
+    {
+        //
+        // Populate match buttons where current player is left player or the right player
+        //
+        var matches = _networkManager.GetMatchesAsync().ContinueWith(t =>
+        {
+            foreach (var match in t.Result)
+            {
+                // We can only instantiate objects (in this case buttons) on the main thread, so we have a crazy work around to add functions to the main thread.
+                // TODO: Find a better way to instantiate on other threads
+                NetworkManager.Call(() => AddMatchButton(match));
+            }
+        });
+    }
 
     private void AddMatchButton(Match match)
     {
@@ -62,19 +77,5 @@ public class CurrentMatches : MonoBehaviour {
                 }
             }
         }
-    }
-
-    public void LoadMatchButtonsAsync()
-    {
-        //
-        // Populate match buttons where current player is left player or the right player
-        //
-        var matches = _networkManager.GetMatchesAsync().ContinueWith(t =>
-        {
-            foreach (var match in t.Result)
-            {
-                AddMatchButton(match);
-            }
-        });
     }
 }
