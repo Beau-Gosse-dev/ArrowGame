@@ -35,7 +35,7 @@ public class StartMenu : MonoBehaviour
     public void onFriendClicked()
     {
         var networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
-        if(networkManager.IsUserLoggedIn())
+        if(networkManager.CurrentUser.IsLoggedIn)
         {
             SceneManager.LoadScene("CurrentMatches");
         }

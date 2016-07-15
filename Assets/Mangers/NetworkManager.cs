@@ -1,17 +1,17 @@
 ﻿using UnityEngine;
-using Facebook.Unity;
 using System.Collections;
-using System.Text;
 using System.Collections.Generic;
-using System.Threading;
-using System;
 using Parse;
 using UnityEngine.SceneManagement;
+using Assets.Networking;
+using System.Threading.Tasks;
 
 class NetworkManager : MonoBehaviour
 {
     #region One-time Creation
     public static NetworkManager Instance { get; private set; }
+    public GameUser CurrentUser { get; private set; }
+
     void Awake()
     {
         // For running on the main thread
@@ -22,6 +22,8 @@ class NetworkManager : MonoBehaviour
         Instance = this;
         // This NetworkManager object will persist until the game is closed
         DontDestroyOnLoad(gameObject);
+
+        CurrentUser = new GameUser();
 
         // Now that the network manager is ready, head to the menu
         SceneManager.LoadScene("StartMenu");
@@ -36,9 +38,42 @@ class NetworkManager : MonoBehaviour
         }
     }
 
-    public bool IsUserLoggedIn()
+    public Task<List<Match>> GetMatchesAsync()
     {
-        return ParseUser.CurrentUser != null;
+        // TODO: Can this function be cleaned up?
+        ParseQuery<ParseObject> queryLeftPlayer = new ParseQuery<ParseObject>("MatchTest").WhereEqualTo("playerLeftId", ParseUser.CurrentUser.ObjectId);
+        ParseQuery<ParseObject> queryRightPlayer = new ParseQuery<ParseObject>("MatchTest").WhereEqualTo("playerRightId", ParseUser.CurrentUser.ObjectId);
+        ParseQuery<ParseObject> queryBothSides = queryLeftPlayer.Or(queryRightPlayer);
+        return queryBothSides.FindAsync().ContinueWith(t =>
+        {
+            var matches = new List<Match>();
+            IEnumerable<ParseObject> results = t.Result;
+            foreach (ParseObject parseObject in results)
+            {
+                matches.Add(getMatchFromParseObject(parseObject));
+            }
+            return matches;
+        });
+    }
+
+    private Match getMatchFromParseObject(ParseObject parseObject)
+    {
+        var match = new Match();
+        // If the current user is the match's left player, show the right player on the button (the opponent)
+        if (parseObject.Get<string>("playerLeftId") == ParseUser.CurrentUser.ObjectId)
+        {
+            match.friendId = parseObject.Get<string>("playerRightId");
+            match.friendName = parseObject.Get<string>("playerRightName");
+        }
+        else
+        {
+            match.friendId = parseObject.Get<string>("playerLeftId");
+            match.friendName = parseObject.Get<string>("playerLeftName");
+        }
+        match.matchId = parseObject.ObjectId;
+        match.leftHealth = parseObject.Get<float>("playerLeftHealth");
+        match.rightHealth = parseObject.Get<float>("playerRightHealth");
+        return match;
     }
 
     #region Parse Stuff
