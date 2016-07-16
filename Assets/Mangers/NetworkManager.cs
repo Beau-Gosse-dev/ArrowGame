@@ -5,6 +5,7 @@ using Parse;
 using UnityEngine.SceneManagement;
 using Assets.Networking;
 using System.Threading.Tasks;
+using System;
 
 class NetworkManager : MonoBehaviour
 {
@@ -76,6 +77,89 @@ class NetworkManager : MonoBehaviour
         match.leftHealth = parseObject.Get<float>("playerLeftHealth");
         match.rightHealth = parseObject.Get<float>("playerRightHealth");
         return match;
+    }
+
+    /// <summary>
+    /// Sign in with the username and password, also provide an action to do with the result of the sign in.
+    /// </summary>
+    /// <param name="username">Username to sign in with</param>
+    /// <param name="password">Password to sign in with</param>
+    /// <param name="processSignInResult">An action that takes a string to process after sign in. The string is null if the sign in was successful</param>
+    public void signUpAsync(string username, string password, Action<string> processSignInResult)
+    {
+        ParseUser user = new ParseUser()
+        {
+            Username = username,
+            Password = password
+            //,Email = null
+        };
+
+        // other fields can be set just like with ParseObject
+        //user["phone"] = "650-555-0000";
+
+        user.SignUpAsync().ContinueWith(t =>
+        {
+            string signInResultMessage = null;
+            if (t.IsCanceled)
+            {
+                Debug.Log("Canceled Sign Up");
+            }
+            if (t.IsFaulted)
+            {
+                Debug.Log("Sign up faulted");
+
+                foreach (var ex in t.Exception.InnerExceptions)
+                {
+                    ParseException parseException = (ParseException)ex;
+                    signInResultMessage = parseException.Message;
+                    Debug.Log("Error message " + signInResultMessage);
+                    Debug.Log("Error code: " + parseException.Code);
+                }
+            }
+            else
+            {
+                // Login was successful.
+                Debug.Log("Sign up success");
+            }
+            processSignInResult(signInResultMessage);
+        });
+    }
+
+    /// <summary>
+    /// Sign in with the username and password, also provide an action to do with the result of the sign in.
+    /// </summary>
+    /// <param name="username">Username to sign in with</param>
+    /// <param name="password">Password to sign in with</param>
+    /// <param name="processSignInResult">An action that takes a string to process after sign in. The string is null if the sign in was successful</param>
+    public void signInAsync(string username, string password, Action<string> processSignInResult)
+    {
+        // TODO save actual username as lowercase so that we don't have dups, but also save display name with cases.
+        ParseUser.LogInAsync(username, password).ContinueWith(t =>
+        {
+            string signInResultMessage = null;
+            if (t.IsCanceled)
+            {
+                Debug.Log("Canceled Sign In");
+            }
+            if (t.IsFaulted)
+            {
+                Debug.Log("Sign in faulted");
+                foreach (var ex in t.Exception.InnerExceptions)
+                {
+                    ParseException parseException = (ParseException)ex;
+                    signInResultMessage = parseException.Message;
+                    Debug.Log("Error message " + signInResultMessage);
+                    Debug.Log("Error code: " + parseException.Code);
+                }
+            }
+            else
+            {
+                // Login was successful.
+                Debug.Log("Sign in success");
+            }
+
+            processSignInResult(signInResultMessage);
+        });
     }
 
     #region Parse Stuff

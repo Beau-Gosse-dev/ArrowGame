@@ -1,7 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using Parse;
-using System;
 using UnityEngine.SceneManagement;
 
 public class CreateAccount : MonoBehaviour
@@ -11,12 +9,14 @@ public class CreateAccount : MonoBehaviour
     public InputField UserNameField;
     public InputField PasswordField;
     public Text ErrorText;
+    private NetworkManager _networkManager;
 
     // Use this for initialization
     void Start ()
     {
-        SignInButton.onClick.AddListener(TestSignInButtonBehavior);
-        SignUpButton.onClick.AddListener(TestSignUpButtonBehavior);
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+        SignInButton.onClick.AddListener(SignInButtonBehavior);
+        SignUpButton.onClick.AddListener(SignUpButtonBehavior);
 
         ErrorText.enabled = false;
     }
@@ -30,72 +30,34 @@ public class CreateAccount : MonoBehaviour
         }
     }
 
-    public void TestSignUpButtonBehavior()
+    public void SignUpButtonBehavior()
     {
-        ParseUser user = new ParseUser()
+        _networkManager.signUpAsync(UserNameField.text, PasswordField.text, (string errorMessage) =>
         {
-            Username = UserNameField.text,
-            Password = PasswordField.text
-            //,Email = null
-        };
-
-        // other fields can be set just like with ParseObject
-        //user["phone"] = "650-555-0000";
-       
-        user.SignUpAsync().ContinueWith(t =>
-        {
-            if (t.IsCanceled)
+            if (errorMessage == null)
             {
-                Debug.Log("Canceled Sign Up");
-            }
-            if (t.IsFaulted)
-            {
-                Debug.Log("Sign up faulted");
-
-                foreach (var ex in t.Exception.InnerExceptions)
-                {
-                    ParseException parseException = (ParseException)ex;
-                    Debug.Log("Error message " + parseException.Message);
-                    Debug.Log("Error code: " + parseException.Code);
-                    NetworkManager.Call(ShowErrorText, ex.Message);
-                }
+                NetworkManager.Call(HideErrorText);
+                NetworkManager.Call(LoadCreateMatch);
             }
             else
             {
-                // Login was successful.
-                Debug.Log("Sign up success");
-                NetworkManager.Call(HideErrorText);
-                NetworkManager.Call(LoadCreateMatch);
+                NetworkManager.Call(ShowErrorText, errorMessage);
             }
         });
     }
 
-    public void TestSignInButtonBehavior()
+    public void SignInButtonBehavior()
     {
-        // TODO save actual username as lowercase so that we don't have dups, but also save display name with cases.
-        ParseUser.LogInAsync(UserNameField.text, PasswordField.text).ContinueWith(t =>
+        _networkManager.signInAsync(UserNameField.text, PasswordField.text, (string errorMessage) =>
         {
-            if (t.IsCanceled)
+            if (errorMessage == null)
             {
-                Debug.Log("Canceled Sign In");
-            }
-            if (t.IsFaulted)
-            {
-                Debug.Log("Sign in faulted");
-                foreach (var ex in t.Exception.InnerExceptions)
-                {
-                    ParseException parseException = (ParseException)ex;
-                    Debug.Log("Error message " + parseException.Message);
-                    Debug.Log("Error code: " + parseException.Code);
-                    NetworkManager.Call(ShowErrorText, parseException.Message);
-                }
+                NetworkManager.Call(HideErrorText);
+                NetworkManager.Call(LoadCreateMatch);
             }
             else
             {
-                // Login was successful.
-                Debug.Log("Sign in success");
-                NetworkManager.Call(HideErrorText);
-                NetworkManager.Call(LoadCreateMatch);
+                NetworkManager.Call(ShowErrorText, errorMessage);
             }
         });
     }
@@ -112,9 +74,9 @@ public class CreateAccount : MonoBehaviour
 
     public void ShowErrorText(object error)
     {
-        Debug.Log("SHowErrorText");
+        Debug.Log("ShowErrorText: " + (string)error);
         ErrorText.enabled = true;
-        ErrorText.text = (String)error;
+        ErrorText.text = (string)error;
     }
     private void HideErrorText()
     {
