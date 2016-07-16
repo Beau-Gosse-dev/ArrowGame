@@ -1,17 +1,11 @@
 ﻿using UnityEngine;
-using System.Collections;
 using UnityEngine.UI;
-using Assets.Managers;
 using Parse;
-using System.Threading.Tasks;
 using System;
-using Facebook.Unity;
-using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 
 public class CreateAccount : MonoBehaviour
 {
-    public Button FacebookSignInButton;
     public Button SignInButton;
     public Button SignUpButton;
     public InputField UserNameField;
@@ -21,71 +15,18 @@ public class CreateAccount : MonoBehaviour
     // Use this for initialization
     void Start ()
     {
-        FacebookSignInButton.onClick.AddListener(FacebookSignInButtonBehavior);
         SignInButton.onClick.AddListener(TestSignInButtonBehavior);
         SignUpButton.onClick.AddListener(TestSignUpButtonBehavior);
 
         ErrorText.enabled = false;
     }
-	
+
 	// Update is called once per frame
 	void Update ()
     {
         if (Input.GetKeyUp(KeyCode.Escape))
         {
             LevelManager.quitPlaying();
-        }
-    }
-    public void FacebookSignInButtonBehavior()
-    {
-        // If the user is already logged in with a username, try to link to facebook.
-        // TODO: if the user is already logged into facebook also, do a check (we probably shouldn't even show this button)
-
-        // Use the Facebook sdk to log in with Facebook credentials
-
-
-        List<string> facebookPermissions = new List<string>();
-        facebookPermissions.Add("public_profile");
-        if (!FB.IsInitialized)
-        {
-            FB.Init(() =>
-            {
-                FB.LogInWithReadPermissions(facebookPermissions, FacebookLoginCallback);
-            });
-        }
-        else
-        {
-            FB.LogInWithReadPermissions(facebookPermissions, FacebookLoginCallback);
-        }
-    }
-
-    // Attch the Facebook Login token to our Cognito Identity.
-    private void FacebookLoginCallback(ILoginResult result)
-    {
-        if (result.Error != null || !FB.IsLoggedIn)
-        {
-            Debug.LogError(result.Error);
-        }
-        else
-        {
-
-            //FB.API("/me?fields=first_name", HttpMethod.GET, LoginCallback2);
-            if (ParseUser.CurrentUser != null)
-            {
-                Task<ParseUser> logInTask = ParseFacebookUtils.LogInAsync(result.AccessToken.UserId, result.AccessToken.TokenString, result.AccessToken.ExpirationTime);
-            }
-            else
-            {
-                if (!ParseFacebookUtils.IsLinked(ParseUser.CurrentUser))
-                {
-                    Task linkTask = ParseFacebookUtils.LinkAsync(ParseUser.CurrentUser, result.AccessToken.UserId, result.AccessToken.TokenString, result.AccessToken.ExpirationTime);
-                }
-            }
-
-            // Login was successful.
-            Debug.Log("Sign up success");
-            NetworkManager.Call(HideErrorText);
-            NetworkManager.Call(LoadCreateMatch);
         }
     }
 

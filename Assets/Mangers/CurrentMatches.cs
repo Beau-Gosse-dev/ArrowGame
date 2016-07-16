@@ -65,6 +65,7 @@ public class CurrentMatches : MonoBehaviour {
             {
                 slider.value = newButton.playerRightHealth;
             }
+
             // If the slider is at 0, remove the green "fill" image
             if (slider.value <= 0)
             {
