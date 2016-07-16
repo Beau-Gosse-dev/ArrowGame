@@ -1,9 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
 using Parse;
 using System.Collections.Generic;
-using System;
 using UnityEngine.SceneManagement;
 
 public class FriendSearch : MonoBehaviour {

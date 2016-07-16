@@ -1,7 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System;
-using Parse;
 using Assets.Mangers;
 
 public class AimLineFriend : MonoBehaviour
@@ -25,8 +23,11 @@ public class AimLineFriend : MonoBehaviour
 
     // private Vector3 computerAim = new Vector3(6f, 4f, -.05f);
 
+    private NetworkManager _networkManager;
+
     void Start()
     {
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
         lineRender = gameObject.GetComponent<LineRenderer>();
         lineRender.SetColors(Color.black, Color.black);
         lineRender.SetWidth(0.01f, 0.3f);
@@ -299,8 +300,8 @@ public class AimLineFriend : MonoBehaviour
                 && !cameraFollow.Paused 
                 && !cameraFollow.IsMoving() 
                 && LevelDefinition.gameState == GameState.Playing
-                && ((LevelDefinition.IsPlayerLeftTurn && ParseUser.CurrentUser.ObjectId == LevelDefinition.PlayerLeftId)
-                    || (!LevelDefinition.IsPlayerLeftTurn && ParseUser.CurrentUser.ObjectId == LevelDefinition.PlayerRightId))
+                && ((LevelDefinition.IsPlayerLeftTurn && _networkManager.CurrentUser.UserId == LevelDefinition.PlayerLeftId)
+                    || (!LevelDefinition.IsPlayerLeftTurn && _networkManager.CurrentUser.UserId == LevelDefinition.PlayerRightId))
                 )
             {
                 if (Input.GetMouseButton(0))

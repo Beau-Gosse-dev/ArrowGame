@@ -1,9 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
 using Parse;
-using System.Threading.Tasks;
-using Assets.Managers;
 using Assets.Mangers;
 
 public class ButtonCreateMatch : MonoBehaviour
@@ -14,9 +11,19 @@ public class ButtonCreateMatch : MonoBehaviour
     public string usernameOfFriend;
     public CreateMatch createMatchObject;
 
+    private NetworkManager _networkManager;
+
+    void Start()
+    {
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+    }
+
+
     public void createMatch()
     {
         LevelDefinition.LevelDefinitionSetDefault();
+
+
         ParseObject matchParseObject = LevelDefinition.getParseObject(
             ParseUser.CurrentUser.ObjectId, 
             ParseUser.CurrentUser.Username, 
@@ -24,9 +31,7 @@ public class ButtonCreateMatch : MonoBehaviour
             usernameOfFriend
             );
 
-        matchParseObject.SaveAsync().ContinueWith(t =>
-        {
-        });
+        matchParseObject.SaveAsync();
     }
 }
 

@@ -1,9 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
 using System.Collections.Generic;
 using Parse;
-using System.Threading.Tasks;
 using UnityEngine.SceneManagement;
 
 public class CreateMatch : MonoBehaviour {

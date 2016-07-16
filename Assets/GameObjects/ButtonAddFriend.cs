@@ -1,9 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
-using Parse;
-using System.Threading.Tasks;
-using Assets.Managers;
 
 public class ButtonAddFriend : MonoBehaviour
 {

@@ -1,9 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
 using Parse;
-using System.Threading.Tasks;
-using Assets.Managers;
 using Assets.Mangers;
 
 public class ButtonCurrentMatch : MonoBehaviour

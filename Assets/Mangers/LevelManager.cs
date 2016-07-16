@@ -2,9 +2,6 @@
 using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
-using Parse;
-using System.IO;
-using Newtonsoft.Json;
 using System;
 using UnityEngine.SceneManagement;
 using Assets.Mangers;

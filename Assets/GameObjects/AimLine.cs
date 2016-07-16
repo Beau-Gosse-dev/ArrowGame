@@ -1,7 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System;
-using Parse;
 using Assets.Mangers;
 
 public class AimLine : MonoBehaviour
