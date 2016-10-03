@@ -35,18 +35,18 @@ public class Player : MonoBehaviour {
                 // If we are in the rebuttal stage and Left player also died, it's a tie, reset
                 if (_networkManager.levelDef.RebuttalTextEnabled)
                 {
-                    levelManager.EndGame(LevelManager.EndGameState.Tie);
+                    levelManager.EndGame(LevelManagerFriend.EndGameState.Tie);
                 }
                 else
                 {
                     // If the left player died (who went first) it's over
                     // Mark the point
-                    levelManager.EndGame(LevelManager.EndGameState.RightWins);
+                    levelManager.EndGame(LevelManagerFriend.EndGameState.RightWins);
                 }
             }
             else if (_networkManager.levelDef.RebuttalTextEnabled) // Else if left player didn't die and we were in rebuttal, left player wins.
             {
-                levelManager.EndGame(LevelManager.EndGameState.LeftWins);
+                levelManager.EndGame(LevelManagerFriend.EndGameState.LeftWins);
             }
             redBar.sizeDelta = new Vector2(_networkManager.levelDef.PlayerLeftHealth, redBar.rect.height);
         }
@@ -61,7 +61,7 @@ public class Player : MonoBehaviour {
                 //if (LevelManager.levelDefinition.IsPlayerLeftTurn)
                 if (_networkManager.levelDef.RebuttalTextEnabled || _networkManager.levelDef.IsPlayerLeftTurn)
                 {
-                    levelManager.EndGame(LevelManager.EndGameState.LeftWins);
+                    levelManager.EndGame(LevelManagerFriend.EndGameState.LeftWins);
                 }
                 else
                 {

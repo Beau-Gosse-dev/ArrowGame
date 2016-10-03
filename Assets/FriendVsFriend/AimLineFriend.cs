@@ -5,7 +5,7 @@ using Assets.Mangers;
 public class AimLineFriend : MonoBehaviour
 {
     public Arrow activeArrow;
-    public CameraFollow cameraFollow;
+    public CameraFollowFriend cameraFollow;
     private LineRenderer lineRender;
     public Player playerLeft;
     private bool IsDragging = false; // If the aim/power line is visible and the player is dragging

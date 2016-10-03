@@ -12,8 +12,7 @@ public class CreateMatch : MonoBehaviour {
     public ButtonCreateMatch buttonCreateMatchPrefab;
 
     public Button AddFriendButton;
-    
-    private List<ButtonCreateMatchContent> userButtonContentList = new List<ButtonCreateMatchContent>();
+
     private NetworkManager _networkManager;
 
     // Use this for initialization

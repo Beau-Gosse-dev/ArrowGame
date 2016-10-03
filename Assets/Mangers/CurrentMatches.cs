@@ -11,7 +11,6 @@ public class CurrentMatches : MonoBehaviour {
     public ButtonCurrentMatch buttonCurrentMatchPrefab;
     public Button AddFriendButton;
     
-    private List<ButtonCurrentMatch> matchButtonList = new List<ButtonCurrentMatch>();
     private NetworkManager _networkManager;
 
     void Awake()
@@ -33,7 +32,7 @@ public class CurrentMatches : MonoBehaviour {
         //
         // Populate match buttons where current player is left player or the right player
         //
-        var matches = _networkManager.GetMatchesAsync().ContinueWith(t =>
+        _networkManager.GetMatchesAsync().ContinueWith(t =>
         {
             foreach (var match in t.Result)
             {
@@ -47,7 +46,7 @@ public class CurrentMatches : MonoBehaviour {
     private void AddMatchButton(Match match)
     {
         ButtonCurrentMatch newButton = Instantiate(buttonCurrentMatchPrefab);
-        newButton.iconOfFriend = null; // TODO: Add icon from facebook or something
+        newButton.iconOfFriend = null; // TODO: Add icon from Facebook or something
         newButton.button.GetComponentInChildren<Text>().text = "Match in Progress: " + match.friendName;
         newButton.usernameOfFriend = match.friendName;
         newButton.userIdOfFriend = match.friendId;

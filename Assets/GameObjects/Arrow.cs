@@ -13,7 +13,7 @@ public class Arrow : MonoBehaviour
     public Player playerRight;
     private const float arrowPlayerXOffset = 1.7f;
     private const float arrowPlayerYOffset = .5f;
-    public CameraFollow cameraFollow;
+    public CameraFollowFriend cameraFollow;
     public List<Arrow> arrowsShot = new List<Arrow>();
 
     private const int BodyDamageAmount = 55;

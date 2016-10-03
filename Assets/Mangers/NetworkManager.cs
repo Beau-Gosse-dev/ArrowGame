@@ -31,23 +31,26 @@ class NetworkManager : MonoBehaviour
 
     void Awake()
     {
-        // For running on the main thread
-        calls = new List<CallInfo>();
-        functions = new List<Func>();
-        StartCoroutine(Executer());
-        
-        // This NetworkManager object will persist until the game is closed
-        DontDestroyOnLoad(gameObject);
+        if (!hasStarted)
+        {
+            // For running on the main thread
+            calls = new List<CallInfo>();
+            functions = new List<Func>();
+            StartCoroutine(Executer());
 
-        // TODO: Apparently you can't call any parse stuff until this scene has finished. Maybe we need to wrap the Parse stuff in a outer scene that loads this one.
-        //CurrentUser = new GameUser();
-        
-        levelDef = new LevelDefinition();
+            // This NetworkManager object will persist until the game is closed
+            DontDestroyOnLoad(gameObject);
 
-        // Now that the network manager is ready, head to the menu
-        SceneManager.LoadScene("StartMenu");
+            // TODO: Apparently you can't call any parse stuff until this scene has finished. Maybe we need to wrap the Parse stuff in a outer scene that loads this one.
+            //CurrentUser = new GameUser();
 
-        hasStarted = true;
+            levelDef = new LevelDefinition();
+
+            // Now that the network manager is ready, head to the menu
+            SceneManager.LoadScene("StartMenu");
+
+            hasStarted = true;
+        }
     }
     #endregion
 
