@@ -29,10 +29,17 @@ public class LevelManager : MonoBehaviour
     public const float MinPlayerDistance = 5.0f;
 
     public List<GameObject> bricks = new List<GameObject>();
-    
-    public void OnLevelWasLoaded()
+    private NetworkManager _networkManager;
+    private RebuttalText _rebuttalText;
+
+    public void Awake()
     {
-        startPlaying();
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+        _rebuttalText = GameObject.Find("RebuttalText").GetComponent<RebuttalText>();
     }
 
     // Use this for initialization
@@ -43,7 +50,7 @@ public class LevelManager : MonoBehaviour
 
     void Update()
     {
-        //if (LevelDefinition.gameState == GameState.ShowLastMove)
+        //if (_networkManager.levelDef.gameState == GameState.ShowLastMove)
         //{
         //    // Lerp the colour of the texture between itself and black.
         //    fader.color = Color.Lerp(fader.color, replayColor, 1.5f * Time.deltaTime);
@@ -78,7 +85,7 @@ public class LevelManager : MonoBehaviour
 
     public void EndGame(EndGameState endGameState)
     {
-        LevelDefinition.gameState = GameState.GameOver;
+        _networkManager.levelDef.gameState = GameState.GameOver;
         StartCoroutine(EndGameOverTime(endGameState, 2.0f));
     }
 
@@ -109,27 +116,27 @@ public class LevelManager : MonoBehaviour
 
     public void startPlaying()
     {
-        LevelDefinition.LevelDefinitionSetDefault();
+        _networkManager.levelDef.LevelDefinitionSetDefault();
 
         // Set the game state to show the last player's move
-        if (LevelDefinition.ShotArrows.Count > 0)
+        if (_networkManager.levelDef.ShotArrows.Count > 0)
         {
-            LevelDefinition.gameState = GameState.ShowLastMove;
+            _networkManager.levelDef.gameState = GameState.ShowLastMove;
         }
         else
         {
-            LevelDefinition.gameState = GameState.Playing;
+            _networkManager.levelDef.gameState = GameState.Playing;
         }
 
         // Remove the old wall and set up the current ones.
         RemoveWalls();
-        AddWalls(LevelDefinition.WallPosition, LevelDefinition.WallHeight);
+        AddWalls(_networkManager.levelDef.WallPosition, _networkManager.levelDef.WallHeight);
 
         // Set the player distance
-        SetPlayerWidth(LevelDefinition.PlayerDistanceFromCenter);
+        SetPlayerWidth(_networkManager.levelDef.PlayerDistanceFromCenter);
 
         // Reset the aimline (including the computer's new aim start point)
-        aimLine.SetupMatch();
+        //aimLine.SetupMatch();
 
         // Set the world canvas (instructions above the left player)
         //worldCanvas.transform.position = new Vector3(playerLeft.transform.position.x + 6.0f, worldCanvas.transform.position.y, worldCanvas.transform.position.z);
@@ -138,25 +145,25 @@ public class LevelManager : MonoBehaviour
         // Add the current ones
         // Then set the arrow's position
         arrow.RemoveAllShotArrows();
-        arrow.AddShotArrows(LevelDefinition.ShotArrows);
-        arrow.ResetPosition(LevelDefinition.IsPlayerLeftTurn);
+        arrow.AddShotArrows(_networkManager.levelDef.ShotArrows);
+        arrow.ResetPosition(_networkManager.levelDef.IsPlayerLeftTurn);
 
         // Set the player's healths
-        playerLeft.SetHealth(LevelDefinition.PlayerLeftHealth);
-        playerRight.SetHealth(LevelDefinition.PlayerRightHealth);
+        playerLeft.SetHealth(_networkManager.levelDef.PlayerLeftHealth);
+        playerRight.SetHealth(_networkManager.levelDef.PlayerRightHealth);
 
         // Check if the game is already over.
-        // Setup the rebuttle text
-        RebuttalText.setEnabled(LevelDefinition.RebuttleTextEnabled);
-        if (LevelDefinition.PlayerLeftHealth <= 0 && LevelDefinition.PlayerRightHealth <= 0)
+        // Setup the rebuttal text
+        _rebuttalText.setEnabled(_networkManager.levelDef.RebuttalTextEnabled);
+        if (_networkManager.levelDef.PlayerLeftHealth <= 0 && _networkManager.levelDef.PlayerRightHealth <= 0)
         {
             EndGame(EndGameState.Tie);
         }
-        else if(LevelDefinition.PlayerLeftHealth <= 0)
+        else if(_networkManager.levelDef.PlayerLeftHealth <= 0)
         {
             EndGame(EndGameState.RightWins);
         }
-        else if (LevelDefinition.PlayerRightHealth <= 0 && !LevelDefinition.RebuttleTextEnabled)
+        else if (_networkManager.levelDef.PlayerRightHealth <= 0 && !_networkManager.levelDef.RebuttalTextEnabled)
         {
             EndGame(EndGameState.LeftWins);
         }

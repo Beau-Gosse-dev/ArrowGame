@@ -1,24 +1,39 @@
 ﻿using UnityEngine;
-using System.Collections;
-using Assets.Mangers;
 
 // Left shooter goes first, so it has different behavior from right shooter
 public class Player : MonoBehaviour {
 
     public RectTransform redBar;
-    public LevelManager levelManager;
+    public LevelManagerFriend levelManager;
     public bool isLeft;
-    
+    private NetworkManager _networkManager;
+    private RebuttalText _rebuttalText;
+
+    public void Awake()
+    {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+        _rebuttalText = GameObject.Find("RebuttalText").GetComponent<RebuttalText>();
+    }
+
+    void Start()
+    {
+        SetHealth(isLeft ? _networkManager.levelDef.PlayerLeftHealth : _networkManager.levelDef.PlayerRightHealth);
+    }
+
     public void Hit(float damagePercent)
     {
         if (isLeft)
         {
-            LevelDefinition.PlayerLeftHealth -= damagePercent;
-            LevelDefinition.PlayerLeftHealth = Mathf.Clamp(LevelDefinition.PlayerLeftHealth, 0, 100);
-            if (LevelDefinition.PlayerLeftHealth <= 0)
+            _networkManager.levelDef.PlayerLeftHealth -= damagePercent;
+            _networkManager.levelDef.PlayerLeftHealth = Mathf.Clamp(_networkManager.levelDef.PlayerLeftHealth, 0, 100);
+            if (_networkManager.levelDef.PlayerLeftHealth <= 0)
             {
-                // If we are in the rebuttle stage and Left player also died, it's a tie, reset
-                if (LevelDefinition.RebuttleTextEnabled)
+                // If we are in the rebuttal stage and Left player also died, it's a tie, reset
+                if (_networkManager.levelDef.RebuttalTextEnabled)
                 {
                     levelManager.EndGame(LevelManager.EndGameState.Tie);
                 }
@@ -29,31 +44,31 @@ public class Player : MonoBehaviour {
                     levelManager.EndGame(LevelManager.EndGameState.RightWins);
                 }
             }
-            else if (LevelDefinition.RebuttleTextEnabled) // Else if left player didn't die and we were in rebuttle, left player wins.
+            else if (_networkManager.levelDef.RebuttalTextEnabled) // Else if left player didn't die and we were in rebuttal, left player wins.
             {
                 levelManager.EndGame(LevelManager.EndGameState.LeftWins);
             }
-            redBar.sizeDelta = new Vector2(LevelDefinition.PlayerLeftHealth, redBar.rect.height);
+            redBar.sizeDelta = new Vector2(_networkManager.levelDef.PlayerLeftHealth, redBar.rect.height);
         }
         else
         {
-            LevelDefinition.PlayerRightHealth -= damagePercent;
-            LevelDefinition.PlayerRightHealth = Mathf.Clamp(LevelDefinition.PlayerRightHealth, 0, 100);
-            if (LevelDefinition.PlayerRightHealth <= 0)
+            _networkManager.levelDef.PlayerRightHealth -= damagePercent;
+            _networkManager.levelDef.PlayerRightHealth = Mathf.Clamp(_networkManager.levelDef.PlayerRightHealth, 0, 100);
+            if (_networkManager.levelDef.PlayerRightHealth <= 0)
             {
-                // If the right player died first, he gets a rebuttle since he went second.
+                // If the right player died first, he gets a rebuttal since he went second.
                 // If he was already in rebuttal, or he shot himself, it's over.
                 //if (LevelManager.levelDefinition.IsPlayerLeftTurn)
-                if (LevelDefinition.RebuttleTextEnabled || LevelDefinition.IsPlayerLeftTurn)
+                if (_networkManager.levelDef.RebuttalTextEnabled || _networkManager.levelDef.IsPlayerLeftTurn)
                 {
                     levelManager.EndGame(LevelManager.EndGameState.LeftWins);
                 }
                 else
                 {
-                    RebuttalText.Enable();
+                    _rebuttalText.Enable();
                 }
             }
-            redBar.sizeDelta = new Vector2(LevelDefinition.PlayerRightHealth, redBar.rect.height);
+            redBar.sizeDelta = new Vector2(_networkManager.levelDef.PlayerRightHealth, redBar.rect.height);
         }
     }
 
@@ -61,13 +76,13 @@ public class Player : MonoBehaviour {
     {
         if(isLeft)
         {
-            LevelDefinition.PlayerLeftHealth = health;
-            redBar.sizeDelta = new Vector2(LevelDefinition.PlayerLeftHealth, redBar.rect.height);
+            _networkManager.levelDef.PlayerLeftHealth = health;
+            redBar.sizeDelta = new Vector2(_networkManager.levelDef.PlayerLeftHealth, redBar.rect.height);
         }
         else
         {
-            LevelDefinition.PlayerRightHealth = health;
-            redBar.sizeDelta = new Vector2(LevelDefinition.PlayerRightHealth, redBar.rect.height);
+            _networkManager.levelDef.PlayerRightHealth = health;
+            redBar.sizeDelta = new Vector2(_networkManager.levelDef.PlayerRightHealth, redBar.rect.height);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Assets.GameObjects;
+using Newtonsoft.Json;
 using Parse;
 using System;
 using System.Collections.Generic;
@@ -7,33 +8,33 @@ using UnityEngine.SceneManagement;
 
 namespace Assets.Mangers
 {
-    public static class LevelDefinition
+    public class LevelDefinition
     {
-        public static bool IsPlayerLeftTurn;
-        public static float PlayerDistanceFromCenter;
-        public static float PlayerLeftHealth;
-        public static float PlayerRightHealth;
-        public static List<ShotArrow> ShotArrows;
-        public static int WallHeight;
-        public static float WallPosition;
-        public static GameState gameState;
-        public static GameType gameType;
+        public bool IsPlayerLeftTurn;
+        public float PlayerDistanceFromCenter;
+        public float PlayerLeftHealth;
+        public float PlayerRightHealth;
+        public List<ShotArrow> ShotArrows;
+        public int WallHeight;
+        public float WallPosition;
+        public GameState gameState;
+        public GameType gameType;
 
-        public static float LastShotStartX;
-        public static float LastShotStartY;
-        public static float LastShotEndX;
-        public static float LastShotEndY;
+        public float LastShotStartX;
+        public float LastShotStartY;
+        public float LastShotEndX;
+        public float LastShotEndY;
 
-        public static string PlayerLeftId;
-        public static string PlayerLeftName;
-        public static string PlayerRightId;
-        public static string PlayerRightName;
+        public string PlayerLeftId;
+        public string PlayerLeftName;
+        public string PlayerRightId;
+        public string PlayerRightName;
 
-        public static bool RebuttleTextEnabled;
+        public bool RebuttalTextEnabled;
 
-        public static ParseObject matchParseObject;
+        public ParseObject matchParseObject;
 
-        public static void saveCurrentToServer()
+        public void saveCurrentToServer()
         {
             matchParseObject["isPlayerLeftTurn"] = IsPlayerLeftTurn;
             matchParseObject["playerDistanceFromCenter"] = PlayerDistanceFromCenter;
@@ -44,12 +45,12 @@ namespace Assets.Mangers
             matchParseObject["gameState"] = gameState.ToString();
             matchParseObject["gameType"] = gameType.ToString();
 
-            matchParseObject["LastShotStartX"] = LevelDefinition.LastShotStartX;
-            matchParseObject["LastShotStartY"] = LevelDefinition.LastShotStartY;
-            matchParseObject["LastShotEndX"] = LevelDefinition.LastShotEndX;
-            matchParseObject["LastShotEndtY"] = LevelDefinition.LastShotEndY;
+            matchParseObject["LastShotStartX"] = LastShotStartX;
+            matchParseObject["LastShotStartY"] = LastShotStartY;
+            matchParseObject["LastShotEndX"] = LastShotEndX;
+            matchParseObject["LastShotEndtY"] = LastShotEndY;
 
-            matchParseObject["RebuttleTextEnabled"] = RebuttleTextEnabled;
+            matchParseObject["RebuttalTextEnabled"] = RebuttalTextEnabled;
 
             matchParseObject["ShotArrows"] = JsonConvert.SerializeObject(
                 ShotArrows,
@@ -70,7 +71,7 @@ namespace Assets.Mangers
             });
         }
 
-        public static void LevelDefinitionSetDefault()
+        public void LevelDefinitionSetDefault()
         {
             IsPlayerLeftTurn = true;
             PlayerDistanceFromCenter = 5.0f;
@@ -81,10 +82,10 @@ namespace Assets.Mangers
             WallPosition = 0;
             gameState = GameState.Playing;
             gameType = GameType.Online;
-            RebuttleTextEnabled = false;
+            RebuttalTextEnabled = false;
         }
 
-        public static ParseObject getParseObject(string playerLeftId, string playerLeftName, string playerRightId, string playerRightName)
+        public ParseObject getParseObject(string playerLeftId, string playerLeftName, string playerRightId, string playerRightName)
         {
             ParseObject newParseObject = new ParseObject("MatchTest");
             newParseObject["isPlayerLeftTurn"] = IsPlayerLeftTurn;
@@ -96,17 +97,17 @@ namespace Assets.Mangers
             newParseObject["gameState"] = gameState.ToString();
             newParseObject["gameType"] = gameType.ToString();
 
-            newParseObject["LastShotStartX"] = LevelDefinition.LastShotStartX;
-            newParseObject["LastShotStartY"] = LevelDefinition.LastShotStartY;
-            newParseObject["LastShotEndX"] = LevelDefinition.LastShotEndX;
-            newParseObject["LastShotEndtY"] = LevelDefinition.LastShotEndY;
+            newParseObject["LastShotStartX"] = LastShotStartX;
+            newParseObject["LastShotStartY"] = LastShotStartY;
+            newParseObject["LastShotEndX"] = LastShotEndX;
+            newParseObject["LastShotEndtY"] = LastShotEndY;
 
             newParseObject["playerLeftId"] = playerLeftId;
             newParseObject["playerRightId"] = playerRightId;
             newParseObject["playerLeftName"] = playerLeftName;
             newParseObject["playerRightName"] = playerRightName;
 
-            newParseObject["RebuttleTextEnabled"] = RebuttleTextEnabled;
+            newParseObject["RebuttalTextEnabled"] = RebuttalTextEnabled;
 
             newParseObject["ShotArrows"] = JsonConvert.SerializeObject(
                 ShotArrows,
@@ -120,7 +121,7 @@ namespace Assets.Mangers
             return newParseObject;
         }
 
-        public static void initializeFromParseObject(ParseObject matchObject)
+        public void initializeFromParseObject(ParseObject matchObject)
         {
             IsPlayerLeftTurn = matchObject.Get<bool>("isPlayerLeftTurn");
             PlayerDistanceFromCenter = matchObject.Get<float>("playerDistanceFromCenter");
@@ -141,39 +142,11 @@ namespace Assets.Mangers
             PlayerRightId = matchObject.Get<string>("playerRightId");
             PlayerRightName = matchObject.Get<string>("playerRightName");
 
-            RebuttleTextEnabled = matchObject.Get<bool>("RebuttleTextEnabled");
+            RebuttalTextEnabled = matchObject.Get<bool>("RebuttalTextEnabled");
 
             ShotArrows = JsonConvert.DeserializeObject<List<ShotArrow>>(matchObject.Get<string>("ShotArrows"));
             matchParseObject = matchObject;
             SceneManager.LoadScene("Friend");
-        }
-    }
-    public enum GameType
-    {
-        Local = 0,
-        Computer,
-        Online
-    }
-
-    public enum GameState
-    {
-        ShowLastMove = 0,
-        Playing,
-        GameOver
-    }
-
-    public class ShotArrow
-    {
-        public float Angle;
-        public float X;
-        public float Y;
-        //public Vector3 Position;
-
-        public ShotArrow(float angle, float x, float y)
-        {
-            Angle = angle;
-            X = x;
-            Y = y;
         }
     }
 }

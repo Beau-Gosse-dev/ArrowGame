@@ -12,9 +12,17 @@ public class CreateAccount : MonoBehaviour
     private NetworkManager _networkManager;
 
     // Use this for initialization
+    void Awake()
+    {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+    }
+
     void Start ()
     {
-        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
         SignInButton.onClick.AddListener(SignInButtonBehavior);
         SignUpButton.onClick.AddListener(SignUpButtonBehavior);
 

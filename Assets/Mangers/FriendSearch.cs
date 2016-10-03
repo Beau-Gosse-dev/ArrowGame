@@ -13,6 +13,14 @@ public class FriendSearch : MonoBehaviour {
     public Transform contentPanel;
     public ButtonAddFriend buttonAddFriendPrefab;
     
+    void Awake()
+    {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+    }
+
     // Use this for initialization
     void Start ()
     {

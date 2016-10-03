@@ -9,9 +9,18 @@ public class Settings : MonoBehaviour {
     public Image PendingImage;
     public Text ButtonText;
     private NetworkManager _networkManager;
+
+    void Awake()
+    {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+    }
+
     public void Start()
     {
-        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
         BackButton.onClick.AddListener(() => { SceneManager.LoadScene("StartMenu"); });
         if (_networkManager.CurrentUser != null)
         {

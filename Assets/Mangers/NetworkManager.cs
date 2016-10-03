@@ -6,11 +6,27 @@ using UnityEngine.SceneManagement;
 using Assets.Networking;
 using System.Threading.Tasks;
 using System;
+using Assets.Mangers;
+
 
 class NetworkManager : MonoBehaviour
 {
     #region One-time Creation
-    public static NetworkManager Instance { get; private set; }
+
+    public LevelDefinition levelDef;
+
+    private static bool hasStarted = false;
+
+    public static bool StartFromBeginingIfNotStartedYet()
+    {
+        if (!hasStarted)
+        {
+            SceneManager.LoadScene("PersistentObjectInit");
+            return true;
+        }
+        return false;
+    }
+
     public GameUser CurrentUser { get; set; }
 
     void Awake()
@@ -19,16 +35,19 @@ class NetworkManager : MonoBehaviour
         calls = new List<CallInfo>();
         functions = new List<Func>();
         StartCoroutine(Executer());
-
-        Instance = this;
+        
         // This NetworkManager object will persist until the game is closed
         DontDestroyOnLoad(gameObject);
 
         // TODO: Apparently you can't call any parse stuff until this scene has finished. Maybe we need to wrap the Parse stuff in a outer scene that loads this one.
         //CurrentUser = new GameUser();
+        
+        levelDef = new LevelDefinition();
 
         // Now that the network manager is ready, head to the menu
         SceneManager.LoadScene("StartMenu");
+
+        hasStarted = true;
     }
     #endregion
 
@@ -40,6 +59,55 @@ class NetworkManager : MonoBehaviour
         }
     }
 
+    public void loadFriends(Action<string, string> loadFriends)
+    {
+        //
+        // Populate friend buttons for creating a new match
+        // 
+        ParseUser currentUser = ParseUser.CurrentUser;
+        try
+        {
+            IList<string> friends = currentUser.Get<IList<string>>("friends");
+            foreach (string friend in friends)
+            {
+                ParseUser.Query.GetAsync((string)friend).ContinueWith(t =>
+                {
+                    NetworkManager.Call(() => loadFriends(t.Result.Username, t.Result.ObjectId));
+                });
+            }
+        }
+        catch (KeyNotFoundException)
+        {
+            // This user hasn't added friends yet. Do nothing. 
+        }
+    }
+
+    public void createMatch(string userIdOfFriend, string usernameOfFriend)
+    {
+        this.levelDef.LevelDefinitionSetDefault();
+
+        ParseObject matchParseObject = this.levelDef.getParseObject(
+            ParseUser.CurrentUser.ObjectId,
+            ParseUser.CurrentUser.Username,
+            userIdOfFriend,
+            usernameOfFriend
+            );
+
+        matchParseObject.SaveAsync();
+    }
+
+    public void loadMatch(string matchId)
+    {
+        ParseQuery<ParseObject> query = ParseObject.GetQuery("MatchTest");
+        query.GetAsync(matchId).ContinueWith(t =>
+        {
+            ParseObject match = t.Result;
+            NetworkManager.Call(() =>
+            {
+                levelDef.initializeFromParseObject(match);
+            });
+        });
+    }
 
     public Task<List<Match>> GetMatchesAsync()
     {

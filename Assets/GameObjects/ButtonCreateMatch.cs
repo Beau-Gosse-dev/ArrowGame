@@ -1,7 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using Parse;
-using Assets.Mangers;
 
 public class ButtonCreateMatch : MonoBehaviour
 {
@@ -13,25 +11,18 @@ public class ButtonCreateMatch : MonoBehaviour
 
     private NetworkManager _networkManager;
 
-    void Start()
+    void Awake()
     {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
         _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
     }
 
-
     public void createMatch()
     {
-        LevelDefinition.LevelDefinitionSetDefault();
-
-
-        ParseObject matchParseObject = LevelDefinition.getParseObject(
-            ParseUser.CurrentUser.ObjectId, 
-            ParseUser.CurrentUser.Username, 
-            userIdOfFriend, 
-            usernameOfFriend
-            );
-
-        matchParseObject.SaveAsync();
+        _networkManager.createMatch(userIdOfFriend, usernameOfFriend);
     }
 }
 

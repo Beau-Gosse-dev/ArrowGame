@@ -12,23 +12,31 @@ public class StartMenu : MonoBehaviour
     public Button settingsButton;
     private NetworkManager _networkManager;
 
+    void Awake()
+    {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+    }
+
     void Start ()
     {
-        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
         // TODO: Apparently you can't call any parse stuff until previous scene has finished. Maybe we need to wrap the Parse stuff in a outer scene that loads this one.
         _networkManager.CurrentUser = new GameUser();
     }
 
     public void onHumanClicked()
     {
-        LevelDefinition.gameType = GameType.Local;
+        _networkManager.levelDef.gameType = GameType.Local;
         SceneManager.LoadScene("Human");
     }
 
     public void onComputerClicked(){
-        LevelDefinition.LevelDefinitionSetDefault();
-        LevelDefinition.gameType = GameType.Computer;
-        LevelDefinition.WallPosition = -1;
+        _networkManager.levelDef.LevelDefinitionSetDefault();
+        _networkManager.levelDef.gameType = GameType.Computer;
+        _networkManager.levelDef.WallPosition = -1;
         SceneManager.LoadScene("Computer");
     }
 

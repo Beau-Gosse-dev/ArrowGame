@@ -1,7 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using Parse;
-using Assets.Mangers;
 
 public class ButtonCurrentMatch : MonoBehaviour
 {
@@ -12,18 +10,21 @@ public class ButtonCurrentMatch : MonoBehaviour
     public string matchId;
     public float playerLeftHealth;
     public float playerRightHealth;
-    
+
+    private NetworkManager _networkManager;
+
+    void Awake()
+    {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+    }
+
     public void LoadMatch()
     {
-        ParseQuery<ParseObject> query = ParseObject.GetQuery("MatchTest");
-        query.GetAsync(this.matchId).ContinueWith(t =>
-        {
-            ParseObject match = t.Result;
-            NetworkManager.Call(() =>
-            {
-                LevelDefinition.initializeFromParseObject(match);
-            });
-        });
+        _networkManager.loadMatch(matchId);
     }
 }
 

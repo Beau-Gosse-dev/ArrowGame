@@ -14,9 +14,17 @@ public class CurrentMatches : MonoBehaviour {
     private List<ButtonCurrentMatch> matchButtonList = new List<ButtonCurrentMatch>();
     private NetworkManager _networkManager;
 
+    void Awake()
+    {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+    }
+
     void Start ()
     {
-        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
         myUsername.text = _networkManager.CurrentUser.UserName;
         LoadMatchButtonsAsync();
     }
