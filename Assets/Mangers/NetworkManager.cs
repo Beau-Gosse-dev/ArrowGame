@@ -49,7 +49,8 @@ class NetworkManager : MonoBehaviour
 
             // TODO: Apparently you can't call any parse stuff until this scene has finished. Maybe we need to wrap the Parse stuff in a outer scene that loads this one.
             //CurrentUser = new GameUser();
-
+            CurrentUser = new GameUser();
+            
             levelDef = new LevelDefinition();
 
             // Now that the network manager is ready, head to the menu
@@ -57,6 +58,11 @@ class NetworkManager : MonoBehaviour
 
             hasStarted = true;
         }
+    }
+
+    void Start()
+    {        
+        InitializeUserName();
     }
     #endregion
 
@@ -73,10 +79,9 @@ class NetworkManager : MonoBehaviour
         //
         // Populate friend buttons for creating a new match
         // 
-        ParseUser currentUser = ParseUser.CurrentUser;
         try
         {
-            IList<string> friends = currentUser.Get<IList<string>>("friends");
+            IList<string> friends = ParseUser.CurrentUser.Get<IList<string>>("friends");
             foreach (string friend in friends)
             {
                 ParseUser.Query.GetAsync((string)friend).ContinueWith(t =>
@@ -162,6 +167,58 @@ class NetworkManager : MonoBehaviour
         match.leftHealth = parseObject.Get<float>("playerLeftHealth");
         match.rightHealth = parseObject.Get<float>("playerRightHealth");
         return match;
+    }
+
+    public void LogOut(Func handleLogOutResult)
+    {
+        ParseUser.LogOutAsync().ContinueWith(T =>
+        {
+            Call(handleLogOutResult);
+        });
+    }
+
+    public bool IsLoggedIn
+    {
+        get
+        {
+            try
+            {
+                if (ParseUser.CurrentUser != null)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (AggregateException e)
+            {
+                // If it's AggregateException they aren't logged in
+                return false;
+            }
+        }
+    }
+
+    public void InitializeUserName()
+    {
+        if (IsLoggedIn)
+        {
+            try
+            {
+                CurrentUser.UserName = ParseUser.CurrentUser.Username;
+                CurrentUser.UserId = ParseUser.CurrentUser.ObjectId;
+            }
+            catch (NullReferenceException e)
+            {
+                // TODO: Figure out what the fuck is going on here. Why are we hitting this when nothing is null in the debugger? Async stuff?
+            }
+        }
+        else
+        {
+            CurrentUser.UserName = "Not Logged In";
+            CurrentUser.UserId = "Not Logged In";
+        }
     }
 
     /// <summary>

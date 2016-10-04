@@ -25,6 +25,7 @@ public class StartMenu : MonoBehaviour
     {
         // TODO: Apparently you can't call any parse stuff until previous scene has finished. Maybe we need to wrap the Parse stuff in a outer scene that loads this one.
         _networkManager.CurrentUser = new GameUser();
+        _networkManager.InitializeUserName();
     }
 
     public void onHumanClicked()
@@ -47,7 +48,7 @@ public class StartMenu : MonoBehaviour
 
     public void onFriendClicked()
     {
-        if(_networkManager.CurrentUser.IsLoggedIn)
+        if(_networkManager.IsLoggedIn)
         {
             SceneManager.LoadScene("CurrentMatches");
         }

@@ -44,7 +44,7 @@ public class Settings : MonoBehaviour {
         }
         else
         {
-            _networkManager.CurrentUser.LogOut(() =>
+            _networkManager.LogOut(() =>
             {
                 PendingImage.enabled = false;
                 LogoutButton.enabled = false;
