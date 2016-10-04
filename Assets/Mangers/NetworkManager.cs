@@ -7,7 +7,7 @@ using Assets.Networking;
 using System.Threading.Tasks;
 using System;
 using Assets.Mangers;
-
+using System.Linq;
 
 class NetworkManager : MonoBehaviour
 {
@@ -25,6 +25,12 @@ class NetworkManager : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    public void addFriend(string userIdOfFriend)
+    {
+        ParseUser.CurrentUser.AddUniqueToList("friends", userIdOfFriend);
+        ParseUser.CurrentUser.SaveAsync();
     }
 
     public GameUser CurrentUser { get; set; }
@@ -83,6 +89,14 @@ class NetworkManager : MonoBehaviour
         {
             // This user hasn't added friends yet. Do nothing. 
         }
+    }
+
+    public void searchFriends(string searchString, Action<IEnumerable<ButtonAddFriendContent>> populateResults)
+    {
+        ParseUser.Query
+               .WhereStartsWith("username", searchString)
+               .WhereNotEqualTo("objectId", ParseUser.CurrentUser.ObjectId) // Don't search for yourself
+               .FindAsync().ContinueWith(t => populateResults(t.Result.Select(i => new ButtonAddFriendContent(i.ObjectId, i.Username))));
     }
 
     public void createMatch(string userIdOfFriend, string usernameOfFriend)

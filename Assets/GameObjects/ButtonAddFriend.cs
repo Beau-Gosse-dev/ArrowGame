@@ -7,10 +7,20 @@ public class ButtonAddFriend : MonoBehaviour
     public Image iconOfFriend;
     public string userIdOfFriend;
     public string usernameOfFriend;
+    private NetworkManager _networkManager;
+
+    void Awake()
+    {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+    }
 
     public void addFriend()
     {
-        FriendSearch.addFriend(userIdOfFriend);
+        _networkManager.addFriend(userIdOfFriend);
     }
 }
 

@@ -1,7 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using Parse;
-using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 
 public class FriendSearch : MonoBehaviour {
@@ -12,19 +10,20 @@ public class FriendSearch : MonoBehaviour {
     public Text myUsername;
     public Transform contentPanel;
     public ButtonAddFriend buttonAddFriendPrefab;
-    
+    private NetworkManager _networkManager;
+
     void Awake()
     {
         if (NetworkManager.StartFromBeginingIfNotStartedYet())
         {
             return;
         }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
     }
-
-    // Use this for initialization
+    
     void Start ()
     {
-        myUsername.text = ParseUser.CurrentUser.Username;
+        myUsername.text = _networkManager.CurrentUser.UserName;
     }
 
     public void GoToCreateMatch()
@@ -36,34 +35,23 @@ public class FriendSearch : MonoBehaviour {
     {
         string searchString = UserNameField.text;
 
-        ParseUser.Query
-            .WhereStartsWith("username", searchString)
-            .WhereNotEqualTo("objectId", ParseUser.CurrentUser.ObjectId) // Don't search for yourself
-            .FindAsync().ContinueWith(t =>
+        _networkManager.searchFriends(searchString, users => 
             {
-                IEnumerable<ParseUser> users = t.Result;
-                foreach (ParseUser user in users)
+                foreach (ButtonAddFriendContent user in users)
                 {
-                    ParseUser userForLambda = user;
-                    Debug.Log("User" + user.Username);
+                    Debug.Log("User" + user.usernameOfFriend);
                     NetworkManager.Call(() =>
                     {
                         ButtonAddFriend newButton = Instantiate(buttonAddFriendPrefab);
-                        newButton.iconOfFriend = null; // Todo get facebook pictures
-                        newButton.button.GetComponentInChildren<Text>().text = userForLambda.Username;
-                        newButton.usernameOfFriend = userForLambda.Username;
-                        newButton.userIdOfFriend = userForLambda.ObjectId;
+                        newButton.iconOfFriend = null; // TODO get Facebook pictures
+                        newButton.button.GetComponentInChildren<Text>().text = user.usernameOfFriend;
+                        newButton.usernameOfFriend = user.usernameOfFriend;
+                        newButton.userIdOfFriend = user.userIdOfFriend;
                         newButton.button.onClick.AddListener(newButton.addFriend);
                         newButton.transform.SetParent(contentPanel);
                         newButton.transform.localScale = new Vector3(1, 1, 1);
                     });
                 }
             });
-    }
-
-    public static void addFriend(string userId)
-    {
-        ParseUser.CurrentUser.AddUniqueToList("friends", userId);
-        ParseUser.CurrentUser.SaveAsync();
     }
 }

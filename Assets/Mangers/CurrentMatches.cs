@@ -2,14 +2,13 @@
 using UnityEngine.UI;
 using System.Collections.Generic;
 using Assets.Networking;
+using UnityEngine.SceneManagement;
 
 public class CurrentMatches : MonoBehaviour {
-
-    public Button createMatchButton;
+    
     public Text myUsername;
     public RectTransform matchPanelContent;
     public ButtonCurrentMatch buttonCurrentMatchPrefab;
-    public Button AddFriendButton;
     
     private NetworkManager _networkManager;
 
@@ -27,6 +26,7 @@ public class CurrentMatches : MonoBehaviour {
         myUsername.text = _networkManager.CurrentUser.UserName;
         LoadMatchButtonsAsync();
     }
+
     public void LoadMatchButtonsAsync()
     {
         //
@@ -85,5 +85,15 @@ public class CurrentMatches : MonoBehaviour {
                 }
             }
         }
+    }
+
+    public void loadFriendSeach()
+    {
+        SceneManager.LoadScene("FriendSearch");
+    }
+
+    public void loadCreateMatch()
+    {
+        SceneManager.LoadScene("CreateMatch");
     }
 }

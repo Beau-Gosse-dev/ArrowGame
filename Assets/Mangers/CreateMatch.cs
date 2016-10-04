@@ -1,7 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
-using Parse;
 using UnityEngine.SceneManagement;
 
 public class CreateMatch : MonoBehaviour {
@@ -14,16 +12,19 @@ public class CreateMatch : MonoBehaviour {
     public Button AddFriendButton;
 
     private NetworkManager _networkManager;
-
-    // Use this for initialization
-    void Start ()
+    
+    void Awake()
     {
         if (NetworkManager.StartFromBeginingIfNotStartedYet())
         {
             return;
         }
         _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
-        myUsername.text = ParseUser.CurrentUser.Username;
+    }
+
+    void Start ()
+    {
+        myUsername.text = _networkManager.CurrentUser.UserName;
         FindFriends();
     }
     
@@ -34,7 +35,7 @@ public class CreateMatch : MonoBehaviour {
         {
             ButtonCreateMatch newButton = Instantiate(buttonCreateMatchPrefab);
 
-            newButton.iconOfFriend = null; //todo add pic
+            newButton.iconOfFriend = null; // TODO add picture
             newButton.button.GetComponentInChildren<Text>().text = "Create New with: " + userName;
             newButton.usernameOfFriend = userName;
             newButton.userIdOfFriend = userId;
