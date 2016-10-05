@@ -8,12 +8,15 @@ using System.Threading.Tasks;
 using System;
 using Assets.Mangers;
 using System.Linq;
+using Newtonsoft.Json;
+using Assets.GameObjects;
 
 class NetworkManager : MonoBehaviour
 {
     #region One-time Creation
 
     public LevelDefinition levelDef;
+    private ParseObject currentMatch;
 
     private static bool hasStarted = false;
 
@@ -74,6 +77,70 @@ class NetworkManager : MonoBehaviour
         }
     }
 
+    public void InitializeFromParseObject(ParseObject matchObject)
+    {
+        levelDef.IsPlayerLeftTurn = matchObject.Get<bool>("isPlayerLeftTurn");
+        levelDef.PlayerDistanceFromCenter = matchObject.Get<float>("playerDistanceFromCenter");
+        levelDef.PlayerLeftHealth = matchObject.Get<float>("playerLeftHealth");
+        levelDef.PlayerRightHealth = matchObject.Get<float>("playerRightHealth");
+        levelDef.WallHeight = matchObject.Get<int>("wallHeight");
+        levelDef.WallPosition = matchObject.Get<float>("wallPosition");
+        levelDef.gameState = (GameState)Enum.Parse(typeof(GameState), matchObject.Get<string>("gameState"));
+        levelDef.gameType = (GameType)Enum.Parse(typeof(GameType), matchObject.Get<string>("gameType"));
+        
+        levelDef.LastShotStartX = matchObject.Get<float>("LastShotStartX");
+        levelDef.LastShotStartY = matchObject.Get<float>("LastShotStartY");
+        levelDef.LastShotEndX = matchObject.Get<float>("LastShotEndX");
+        levelDef.LastShotEndY = matchObject.Get<float>("LastShotEndtY");
+        
+        levelDef.PlayerLeftId = matchObject.Get<string>("playerLeftId");
+        levelDef.PlayerLeftName = matchObject.Get<string>("playerLeftName");
+        levelDef.PlayerRightId = matchObject.Get<string>("playerRightId");
+        levelDef.PlayerRightName = matchObject.Get<string>("playerRightName");
+        
+        levelDef.RebuttalTextEnabled = matchObject.Get<bool>("RebuttalTextEnabled");
+        
+        levelDef.ShotArrows = JsonConvert.DeserializeObject<List<ShotArrow>>(matchObject.Get<string>("ShotArrows"));
+        currentMatch = matchObject;
+        SceneManager.LoadScene("Friend");
+    }
+    public void SaveLevelDefinitionToServer()
+    {
+        currentMatch["isPlayerLeftTurn"] = levelDef.IsPlayerLeftTurn;
+        currentMatch["playerDistanceFromCenter"] = levelDef.PlayerDistanceFromCenter;
+        currentMatch["playerLeftHealth"] = levelDef.PlayerLeftHealth;
+        currentMatch["playerRightHealth"] = levelDef.PlayerRightHealth;
+        currentMatch["wallHeight"] = levelDef.WallHeight;
+        currentMatch["wallPosition"] = levelDef.WallPosition;
+        currentMatch["gameState"] = levelDef.gameState.ToString();
+        currentMatch["gameType"] = levelDef.gameType.ToString();
+
+        currentMatch["LastShotStartX"] = levelDef.LastShotStartX;
+        currentMatch["LastShotStartY"] = levelDef.LastShotStartY;
+        currentMatch["LastShotEndX"] = levelDef.LastShotEndX;
+        currentMatch["LastShotEndtY"] = levelDef.LastShotEndY;
+
+        currentMatch["RebuttalTextEnabled"] = levelDef.RebuttalTextEnabled;
+
+        currentMatch["ShotArrows"] = JsonConvert.SerializeObject(
+            levelDef.ShotArrows,
+            Formatting.Indented,
+            new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            }
+        );
+
+        currentMatch.SaveAsync().ContinueWith(t =>
+        {
+            Debug.Log("Canceled: " + t.IsCanceled);
+            Debug.Log("IsCompleted: " + t.IsCompleted);
+            Debug.Log("IsFaulted: " + t.IsFaulted);
+            Debug.Log("Exception: " + t.Exception.ToString());
+            Debug.Log("InnerException: " + t.Exception.InnerException.ToString());
+        });
+    }
+
     public void loadFriends(Action<string, string> loadFriends)
     {
         //
@@ -108,7 +175,7 @@ class NetworkManager : MonoBehaviour
     {
         this.levelDef.LevelDefinitionSetDefault();
 
-        ParseObject matchParseObject = this.levelDef.getParseObject(
+        ParseObject matchParseObject = this.GetLevelDefintionParseObject(
             ParseUser.CurrentUser.ObjectId,
             ParseUser.CurrentUser.Username,
             userIdOfFriend,
@@ -126,9 +193,45 @@ class NetworkManager : MonoBehaviour
             ParseObject match = t.Result;
             NetworkManager.Call(() =>
             {
-                levelDef.initializeFromParseObject(match);
+                this.InitializeFromParseObject(match);
             });
         });
+    }
+
+    public ParseObject GetLevelDefintionParseObject(string playerLeftId, string playerLeftName, string playerRightId, string playerRightName)
+    {
+        ParseObject newParseObject = new ParseObject("MatchTest");
+        newParseObject["isPlayerLeftTurn"] = levelDef.IsPlayerLeftTurn;
+        newParseObject["playerDistanceFromCenter"] = levelDef.PlayerDistanceFromCenter;
+        newParseObject["playerLeftHealth"] = levelDef.PlayerLeftHealth;
+        newParseObject["playerRightHealth"] = levelDef.PlayerRightHealth;
+        newParseObject["wallHeight"] = levelDef.WallHeight;
+        newParseObject["wallPosition"] = levelDef.WallPosition;
+        newParseObject["gameState"] = levelDef.gameState.ToString();
+        newParseObject["gameType"] = levelDef.gameType.ToString();
+
+        newParseObject["LastShotStartX"] = levelDef.LastShotStartX;
+        newParseObject["LastShotStartY"] = levelDef.LastShotStartY;
+        newParseObject["LastShotEndX"] = levelDef.LastShotEndX;
+        newParseObject["LastShotEndtY"] = levelDef.LastShotEndY;
+
+        newParseObject["playerLeftId"] = playerLeftId;
+        newParseObject["playerRightId"] = playerRightId;
+        newParseObject["playerLeftName"] = playerLeftName;
+        newParseObject["playerRightName"] = playerRightName;
+
+        newParseObject["RebuttalTextEnabled"] = levelDef.RebuttalTextEnabled;
+
+        newParseObject["ShotArrows"] = JsonConvert.SerializeObject(
+            levelDef.ShotArrows,
+            Formatting.Indented,
+            new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            }
+        );
+
+        return newParseObject;
     }
 
     public Task<List<Match>> GetMatchesAsync()

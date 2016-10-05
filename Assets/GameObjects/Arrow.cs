@@ -197,7 +197,7 @@ public class Arrow : MonoBehaviour
                 aimLine.ArrowHit(col);
 
                 // Upload the new state to Parse so when the next player comes they can play now.
-                _networkManager.levelDef.saveCurrentToServer();
+                _networkManager.SaveLevelDefinitionToServer();
             }
 
             #endregion gameTypeHuman

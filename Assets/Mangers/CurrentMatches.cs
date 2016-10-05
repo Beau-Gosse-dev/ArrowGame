@@ -34,11 +34,12 @@ public class CurrentMatches : MonoBehaviour {
         //
         _networkManager.GetMatchesAsync().ContinueWith(t =>
         {
-            foreach (var match in t.Result)
+            foreach (Match match in t.Result)
             {
-                // We can only instantiate objects (in this case buttons) on the main thread, so we have a crazy work around to add functions to the main thread.
-                // TODO: Find a better way to instantiate on other threads
-                NetworkManager.Call(() => AddMatchButton(match));
+                // Need to clone match because the async call overwrites the reference it seems. Need to research.
+                Match clonedMatch = (Match)match.Clone();
+
+                NetworkManager.Call(() => AddMatchButton(clonedMatch));
             }
         });
     }
