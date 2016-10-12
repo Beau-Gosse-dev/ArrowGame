@@ -11,10 +11,11 @@ using System.Linq;
 using Newtonsoft.Json;
 using Assets.GameObjects;
 
+using PlayFab;
+using PlayFab.ClientModels;
+
 class NetworkManager : MonoBehaviour
 {
-    #region One-time Creation
-
     public LevelDefinition levelDef;
     private ParseObject currentMatch;
 
@@ -67,7 +68,6 @@ class NetworkManager : MonoBehaviour
     {        
         InitializeUserName();
     }
-    #endregion
 
     void Update()
     {
@@ -368,6 +368,21 @@ class NetworkManager : MonoBehaviour
             }
             processSignInResult(signInResultMessage);
         });
+
+        var registerPlayFabUserRequest = new RegisterPlayFabUserRequest()
+        {
+            TitleId = "8DA7",
+            Username = username,
+            Password = password,
+            RequireBothUsernameAndEmail = false
+        };
+
+        PlayFabClientAPI.RegisterPlayFabUser(registerPlayFabUserRequest, (result) => {
+            Debug.Log("PlayFab Registered username: " + result.Username);
+        },
+        (error) => {
+            processSignInResult(error.ErrorMessage);
+        });
     }
 
     /// <summary>
@@ -404,6 +419,19 @@ class NetworkManager : MonoBehaviour
             }
 
             processSignInResult(signInResultMessage);
+        });
+
+        LoginWithPlayFabRequest request = new LoginWithPlayFabRequest
+        {
+            Username = username,
+            Password = password
+        };
+
+        PlayFabClientAPI.LoginWithPlayFab(request, (result) => {
+            Debug.Log("PlayFab Logged in username: " + request.Username);
+        },
+        (error) => {
+            processSignInResult("PlayFab" + error.ErrorMessage);
         });
     }
 
