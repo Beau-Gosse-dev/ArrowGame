@@ -175,6 +175,8 @@ class NetworkManager : MonoBehaviour
                .WhereStartsWith("username", searchString)
                .WhereNotEqualTo("objectId", ParseUser.CurrentUser.ObjectId) // Don't search for yourself
                .FindAsync().ContinueWith(t => populateResults(t.Result.Select(i => new ButtonAddFriendContent(i.ObjectId, i.Username))));
+
+
     }
 
     public void createMatch(string userIdOfFriend, string usernameOfFriend)
@@ -185,10 +187,75 @@ class NetworkManager : MonoBehaviour
             ParseUser.CurrentUser.ObjectId,
             ParseUser.CurrentUser.Username,
             userIdOfFriend,
-            usernameOfFriend
-            );
+            usernameOfFriend,
+            levelDef);
 
         matchParseObject.SaveAsync();
+        /*  OLD PARSE ABOVE */
+
+        string groupId = ""; 
+        
+        PlayFabClientAPI.CreateSharedGroup(new CreateSharedGroupRequest(),
+            (creatResult) =>
+            {
+                Debug.Log("Success: CreateSharedGroup");
+
+                AddSharedGroupMembersRequest addToGroupRequest = new AddSharedGroupMembersRequest()
+                {
+                    PlayFabIds = new List<string>() { "80ABB42ED024101C", "A7E790B60191A55A" },
+                    SharedGroupId = creatResult.SharedGroupId                    
+                };
+                groupId = creatResult.SharedGroupId;
+
+                PlayFabClientAPI.AddSharedGroupMembers(addToGroupRequest, 
+                    (addResult) =>
+                    {
+                        Debug.Log("Success: AddSharedGroupMembers");
+
+                        UpdateSharedGroupDataRequest updateDataRequest = new UpdateSharedGroupDataRequest()
+                        {
+                            Data = new Dictionary<string, string>() { { "LevelDefinition", JsonConvert.SerializeObject(levelDef).ToString() } },
+                            SharedGroupId = addToGroupRequest.SharedGroupId,
+                            Permission = UserDataPermission.Public
+                        };
+
+                        PlayFabClientAPI.UpdateSharedGroupData(updateDataRequest, 
+                            (result) =>
+                            {
+                                Debug.Log("Success: UpdateSharedGroupData");
+                            }, 
+                            (error) =>
+                            {
+                                Debug.Log("Got error UpdateSharedGroupData" + error.ErrorDetails);
+                            }
+                        );
+                    },
+                    (error) =>
+                    {
+                        Debug.Log("Could not AddSharedGroupMembers: " + error.ErrorDetails);
+                    }
+                );
+            },
+            (error) =>
+            {
+                Debug.Log("Could not CreateSharedGroup: " + error.ErrorDetails);
+            }
+        );
+
+        GetSharedGroupDataRequest getRequest = new GetSharedGroupDataRequest()
+        {
+            SharedGroupId = "sd-90F89BAB81C7AC59",
+            GetMembers = true
+        };
+
+        PlayFabClientAPI.GetSharedGroupData(getRequest, 
+            (result) =>
+            {
+            },
+            (error) =>
+            {
+            });
+
     }
 
     public void loadMatch(string matchId)
@@ -202,34 +269,36 @@ class NetworkManager : MonoBehaviour
                 this.InitializeFromParseObject(match);
             });
         });
+
+
     }
 
-    public ParseObject GetLevelDefintionParseObject(string playerLeftId, string playerLeftName, string playerRightId, string playerRightName)
+    public ParseObject GetLevelDefintionParseObject(string playerLeftId, string playerLeftName, string playerRightId, string playerRightName, LevelDefinition levelDefinition)
     {
         ParseObject newParseObject = new ParseObject("MatchTest");
-        newParseObject["isPlayerLeftTurn"] = levelDef.IsPlayerLeftTurn;
-        newParseObject["playerDistanceFromCenter"] = levelDef.PlayerDistanceFromCenter;
-        newParseObject["playerLeftHealth"] = levelDef.PlayerLeftHealth;
-        newParseObject["playerRightHealth"] = levelDef.PlayerRightHealth;
-        newParseObject["wallHeight"] = levelDef.WallHeight;
-        newParseObject["wallPosition"] = levelDef.WallPosition;
-        newParseObject["gameState"] = levelDef.gameState.ToString();
-        newParseObject["gameType"] = levelDef.gameType.ToString();
+        newParseObject["isPlayerLeftTurn"] = levelDefinition.IsPlayerLeftTurn;
+        newParseObject["playerDistanceFromCenter"] = levelDefinition.PlayerDistanceFromCenter;
+        newParseObject["playerLeftHealth"] = levelDefinition.PlayerLeftHealth;
+        newParseObject["playerRightHealth"] = levelDefinition.PlayerRightHealth;
+        newParseObject["wallHeight"] = levelDefinition.WallHeight;
+        newParseObject["wallPosition"] = levelDefinition.WallPosition;
+        newParseObject["gameState"] = levelDefinition.gameState.ToString();
+        newParseObject["gameType"] = levelDefinition.gameType.ToString();
 
-        newParseObject["LastShotStartX"] = levelDef.LastShotStartX;
-        newParseObject["LastShotStartY"] = levelDef.LastShotStartY;
-        newParseObject["LastShotEndX"] = levelDef.LastShotEndX;
-        newParseObject["LastShotEndtY"] = levelDef.LastShotEndY;
+        newParseObject["LastShotStartX"] = levelDefinition.LastShotStartX;
+        newParseObject["LastShotStartY"] = levelDefinition.LastShotStartY;
+        newParseObject["LastShotEndX"] = levelDefinition.LastShotEndX;
+        newParseObject["LastShotEndtY"] = levelDefinition.LastShotEndY;
 
         newParseObject["playerLeftId"] = playerLeftId;
         newParseObject["playerRightId"] = playerRightId;
         newParseObject["playerLeftName"] = playerLeftName;
         newParseObject["playerRightName"] = playerRightName;
 
-        newParseObject["RebuttalTextEnabled"] = levelDef.RebuttalTextEnabled;
+        newParseObject["RebuttalTextEnabled"] = levelDefinition.RebuttalTextEnabled;
 
         newParseObject["ShotArrows"] = JsonConvert.SerializeObject(
-            levelDef.ShotArrows,
+            levelDefinition.ShotArrows,
             Formatting.Indented,
             new JsonSerializerSettings
             {
