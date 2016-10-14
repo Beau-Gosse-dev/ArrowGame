@@ -13,6 +13,8 @@ using Assets.GameObjects;
 
 using PlayFab;
 using PlayFab.ClientModels;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
 
 class NetworkManager : MonoBehaviour
 {
@@ -20,6 +22,8 @@ class NetworkManager : MonoBehaviour
     private ParseObject currentMatch;
 
     private static bool hasStarted = false;
+
+    public string PlayFabId;
 
     public static bool StartFromBeginingIfNotStartedYet()
     {
@@ -62,7 +66,9 @@ class NetworkManager : MonoBehaviour
 
             hasStarted = true;
         }
-    }
+
+        PlayFabLoginThisDevice();
+    }    
 
     void Start()
     {        
@@ -434,8 +440,7 @@ class NetworkManager : MonoBehaviour
             processSignInResult("PlayFab" + error.ErrorMessage);
         });
     }
-
-    #region Parse Stuff
+    
     class CallInfo
     {
         public Function func;
@@ -507,5 +512,60 @@ class NetworkManager : MonoBehaviour
             }
         }
     }
-    #endregion
+
+    void PlayFabLoginThisDevice()
+    {
+        LoginWithCustomIDRequest request = new LoginWithCustomIDRequest()
+        {
+            TitleId = "8DA7",
+            CreateAccount = true,
+            CustomId = UniqueDeviceGuid.GetValue().ToString()
+        };
+
+        PlayFabClientAPI.LoginWithCustomID(request, (result) => {
+            PlayFabId = result.PlayFabId;
+            Debug.Log("Got PlayFabID: " + PlayFabId);
+
+            if (result.NewlyCreated)
+            {
+                Debug.Log("(new account)");
+            }
+            else
+            {
+                Debug.Log("(existing account)");
+            }
+        },
+        (error) => {
+            Debug.Log("Error logging in player with custom ID:");
+            Debug.Log(error.ErrorMessage);
+        });
+    }
 }
+
+public static class UniqueDeviceGuid
+{
+    public static Guid GetValue()
+    {
+        Guid guid;
+
+        if (File.Exists(Application.persistentDataPath + "/UniqueDeviceGuid.dat"))
+        {
+            BinaryFormatter binaryFormatter = new BinaryFormatter();
+            FileStream file = File.Open(Application.persistentDataPath + "/UniqueDeviceGuid.dat", FileMode.Open);
+            guid = (Guid)binaryFormatter.Deserialize(file);
+            binaryFormatter.Serialize(file, guid);
+            file.Close();
+        }
+        else
+        {
+            BinaryFormatter binaryFormatter = new BinaryFormatter();
+            FileStream file = File.Create(Application.persistentDataPath + "/UniqueDeviceGuid.dat");
+            guid = Guid.NewGuid();
+            binaryFormatter.Serialize(file, guid);
+            file.Close();
+        }
+
+        return guid;
+    }
+}
+
