@@ -37,8 +37,15 @@ class NetworkManager : MonoBehaviour
 
     public void addFriend(string userIdOfFriend)
     {
-        ParseUser.CurrentUser.AddUniqueToList("friends", userIdOfFriend);
-        ParseUser.CurrentUser.SaveAsync();
+        var request = new AddFriendRequest()
+        {
+            FriendPlayFabId = userIdOfFriend
+        };
+
+        PlayFabClientAPI.AddFriend(request, (result) =>
+        {
+            Debug.Log("Successfully added friend: " + userIdOfFriend);
+        }, LogError);          
     }
 
     public GameUser CurrentUser { get; set; }
@@ -64,6 +71,9 @@ class NetworkManager : MonoBehaviour
             // Now that the network manager is ready, head to the menu
             SceneManager.LoadScene("StartMenu");
 
+            // Set the static playfab ID so we can make calls with PlayFab
+            PlayFabSettings.TitleId = "8DA7";
+
             hasStarted = true;
         }
 
@@ -71,7 +81,7 @@ class NetworkManager : MonoBehaviour
     }    
 
     void Start()
-    {        
+    {
         InitializeUserName();
     }
 
@@ -149,34 +159,42 @@ class NetworkManager : MonoBehaviour
 
     public void loadFriends(Action<string, string> loadFriends)
     {
-        //
-        // Populate friend buttons for creating a new match
-        // 
-        try
+        PlayFabClientAPI.GetFriendsList(new GetFriendsListRequest(), (result) =>
         {
-            IList<string> friends = ParseUser.CurrentUser.Get<IList<string>>("friends");
-            foreach (string friend in friends)
+            foreach (var friend in result.Friends)
             {
-                ParseUser.Query.GetAsync((string)friend).ContinueWith(t =>
-                {
-                    NetworkManager.Call(() => loadFriends(t.Result.Username, t.Result.ObjectId));
-                });
+                CallOnMainThread(() => loadFriends(friend.Username, friend.FriendPlayFabId));
             }
-        }
-        catch (KeyNotFoundException)
-        {
-            // This user hasn't added friends yet. Do nothing. 
-        }
+        }, LogError);
     }
 
     public void searchFriends(string searchString, Action<IEnumerable<ButtonAddFriendContent>> populateResults)
     {
-        ParseUser.Query
-               .WhereStartsWith("username", searchString)
-               .WhereNotEqualTo("objectId", ParseUser.CurrentUser.ObjectId) // Don't search for yourself
-               .FindAsync().ContinueWith(t => populateResults(t.Result.Select(i => new ButtonAddFriendContent(i.ObjectId, i.Username))));
+        // Search all 4 fields 
+        var userNameRequest = new GetAccountInfoRequest() { Username = searchString };
+        var emailRequest = new GetAccountInfoRequest() { Email = searchString };
+        var idRequest = new GetAccountInfoRequest() { PlayFabId = searchString };
+        var displayNameRequest = new GetAccountInfoRequest() { TitleDisplayName = searchString };
 
+        PlayFabClientAPI.GetAccountInfo(userNameRequest, (result) =>
+        {
+            populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
+        }, LogError);
 
+        PlayFabClientAPI.GetAccountInfo(emailRequest, (result) =>
+        {
+            populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
+        }, LogError);
+
+        PlayFabClientAPI.GetAccountInfo(idRequest, (result) =>
+        {
+            populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
+        }, LogError);
+
+        PlayFabClientAPI.GetAccountInfo(displayNameRequest, (result) =>
+        {
+            populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
+        }, LogError);
     }
 
     public void createMatch(string userIdOfFriend, string usernameOfFriend)
@@ -206,7 +224,6 @@ class NetworkManager : MonoBehaviour
                     SharedGroupId = creatResult.SharedGroupId                    
                 };
                 groupId = creatResult.SharedGroupId;
-
                 PlayFabClientAPI.AddSharedGroupMembers(addToGroupRequest, 
                     (addResult) =>
                     {
@@ -216,30 +233,18 @@ class NetworkManager : MonoBehaviour
                         {
                             Data = new Dictionary<string, string>() { { "LevelDefinition", JsonConvert.SerializeObject(levelDef).ToString() } },
                             SharedGroupId = addToGroupRequest.SharedGroupId,
-                            Permission = UserDataPermission.Public
+                            Permission = UserDataPermission.Private // TODO: does this work?
                         };
 
                         PlayFabClientAPI.UpdateSharedGroupData(updateDataRequest, 
                             (result) =>
                             {
                                 Debug.Log("Success: UpdateSharedGroupData");
-                            }, 
-                            (error) =>
-                            {
-                                Debug.Log("Got error UpdateSharedGroupData" + error.ErrorDetails);
-                            }
+                            }, LogError
                         );
-                    },
-                    (error) =>
-                    {
-                        Debug.Log("Could not AddSharedGroupMembers: " + error.ErrorDetails);
-                    }
+                    }, LogError
                 );
-            },
-            (error) =>
-            {
-                Debug.Log("Could not CreateSharedGroup: " + error.ErrorDetails);
-            }
+            }, LogError
         );
 
         GetSharedGroupDataRequest getRequest = new GetSharedGroupDataRequest()
@@ -251,10 +256,7 @@ class NetworkManager : MonoBehaviour
         PlayFabClientAPI.GetSharedGroupData(getRequest, 
             (result) =>
             {
-            },
-            (error) =>
-            {
-            });
+            }, LogError);
 
     }
 
@@ -264,7 +266,7 @@ class NetworkManager : MonoBehaviour
         query.GetAsync(matchId).ContinueWith(t =>
         {
             ParseObject match = t.Result;
-            NetworkManager.Call(() =>
+            NetworkManager.CallOnMainThread(() =>
             {
                 this.InitializeFromParseObject(match);
             });
@@ -351,7 +353,7 @@ class NetworkManager : MonoBehaviour
     {
         ParseUser.LogOutAsync().ContinueWith(T =>
         {
-            Call(handleLogOutResult);
+            CallOnMainThread(handleLogOutResult);
         });
     }
 
@@ -359,22 +361,7 @@ class NetworkManager : MonoBehaviour
     {
         get
         {
-            try
-            {
-                if (ParseUser.CurrentUser != null)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            catch (AggregateException e)
-            {
-                // If it's AggregateException they aren't logged in
-                return false;
-            }
+            return PlayFabClientAPI.IsClientLoggedIn();
         }
     }
 
@@ -504,10 +491,12 @@ class NetworkManager : MonoBehaviour
 
         PlayFabClientAPI.LoginWithPlayFab(request, (result) => {
             Debug.Log("PlayFab Logged in username: " + request.Username);
-        },
-        (error) => {
-            processSignInResult("PlayFab" + error.ErrorMessage);
-        });
+        }, LogError);
+    }
+
+    private void LogError(PlayFabError error)
+    {
+        Debug.Log("PlayFab Error: " + error.ErrorMessage + " Details: " + error.ErrorDetails);
     }
     
     class CallInfo
@@ -535,14 +524,14 @@ class NetworkManager : MonoBehaviour
     static System.Object callsLock = new System.Object();
     static System.Object functionsLock = new System.Object();
 
-    public static void Call(Function Func, object Parameter)
+    public static void CallOnMainThread(Function Func, object Parameter)
     {
         lock (callsLock)
         {
             calls.Add(new CallInfo(Func, Parameter));
         }
     }
-    public static void Call(Func func)
+    public static void CallOnMainThread(Func func)
     {
         lock (functionsLock)
         {
@@ -592,22 +581,9 @@ class NetworkManager : MonoBehaviour
         };
 
         PlayFabClientAPI.LoginWithCustomID(request, (result) => {
-            PlayFabId = result.PlayFabId;
-            Debug.Log("Got PlayFabID: " + PlayFabId);
-
-            if (result.NewlyCreated)
-            {
-                Debug.Log("(new account)");
-            }
-            else
-            {
-                Debug.Log("(existing account)");
-            }
-        },
-        (error) => {
-            Debug.Log("Error logging in player with custom ID:");
-            Debug.Log(error.ErrorMessage);
-        });
+            Debug.Log("Logged in user: " + result.PlayFabId);
+            InitializeUserName();
+        }, LogError);
     }
 }
 

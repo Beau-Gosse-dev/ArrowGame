@@ -44,12 +44,12 @@ public class CreateAccount : MonoBehaviour
         {
             if (errorMessage == null)
             {
-                NetworkManager.Call(HideErrorText);
-                NetworkManager.Call(LoadCreateMatch);
+                NetworkManager.CallOnMainThread(HideErrorText);
+                NetworkManager.CallOnMainThread(LoadCreateMatch);
             }
             else
             {
-                NetworkManager.Call(ShowErrorText, errorMessage);
+                NetworkManager.CallOnMainThread(ShowErrorText, errorMessage);
             }
         });
     }
@@ -60,12 +60,12 @@ public class CreateAccount : MonoBehaviour
         {
             if (errorMessage == null)
             {
-                NetworkManager.Call(HideErrorText);
-                NetworkManager.Call(LoadCreateMatch);
+                NetworkManager.CallOnMainThread(HideErrorText);
+                NetworkManager.CallOnMainThread(LoadCreateMatch);
             }
             else
             {
-                NetworkManager.Call(ShowErrorText, errorMessage);
+                NetworkManager.CallOnMainThread(ShowErrorText, errorMessage);
             }
         });
     }

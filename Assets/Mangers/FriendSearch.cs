@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System.Collections.Generic;
 
 public class FriendSearch : MonoBehaviour {
     
@@ -11,6 +12,9 @@ public class FriendSearch : MonoBehaviour {
     public Transform contentPanel;
     public ButtonAddFriend buttonAddFriendPrefab;
     private NetworkManager _networkManager;
+
+    private List<string> IdsAlreadyInList;
+    private Object lockObject = new Object();
 
     void Awake()
     {
@@ -24,6 +28,7 @@ public class FriendSearch : MonoBehaviour {
     void Start ()
     {
         myUsername.text = _networkManager.CurrentUser.UserName;
+        IdsAlreadyInList = new List<string>();
     }
 
     public void GoToCreateMatch()
@@ -35,12 +40,22 @@ public class FriendSearch : MonoBehaviour {
     {
         string searchString = UserNameField.text;
 
-        _networkManager.searchFriends(searchString, users => 
+        _networkManager.searchFriends(searchString, users =>
+        {
+            lock (lockObject)
             {
                 foreach (ButtonAddFriendContent user in users)
                 {
-                    Debug.Log("User" + user.usernameOfFriend);
-                    NetworkManager.Call(() =>
+                    if (IdsAlreadyInList.Contains(user.userIdOfFriend))
+                    {
+                        // This user was already returned by another means, e.g. username and now display name, so just return
+                        return;
+                    }
+
+                    Debug.Log("User: " + user.usernameOfFriend);
+                    IdsAlreadyInList.Add(user.userIdOfFriend);
+
+                    NetworkManager.CallOnMainThread(() =>
                     {
                         ButtonAddFriend newButton = Instantiate(buttonAddFriendPrefab);
                         newButton.iconOfFriend = null; // TODO get Facebook pictures
@@ -52,6 +67,7 @@ public class FriendSearch : MonoBehaviour {
                         newButton.transform.localScale = new Vector3(1, 1, 1);
                     });
                 }
-            });
+            }
+        });
     }
 }

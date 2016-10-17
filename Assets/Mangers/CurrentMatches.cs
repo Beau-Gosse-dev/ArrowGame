@@ -39,7 +39,7 @@ public class CurrentMatches : MonoBehaviour {
                 // Need to clone match because the async call overwrites the reference it seems. Need to research.
                 Match clonedMatch = (Match)match.Clone();
 
-                NetworkManager.Call(() => AddMatchButton(clonedMatch));
+                NetworkManager.CallOnMainThread(() => AddMatchButton(clonedMatch));
             }
         });
     }
