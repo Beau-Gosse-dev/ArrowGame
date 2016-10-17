@@ -40,33 +40,27 @@ public class CreateAccount : MonoBehaviour
 
     public void SignUpButtonBehavior()
     {
-        _networkManager.signUpAsync(UserNameField.text, PasswordField.text, (string errorMessage) =>
-        {
-            if (errorMessage == null)
+        _networkManager.signUpAsync(UserNameField.text, PasswordField.text, 
+            () =>
             {
                 NetworkManager.CallOnMainThread(HideErrorText);
                 NetworkManager.CallOnMainThread(LoadCreateMatch);
-            }
-            else
+            }, 
+            (string errorMessage) =>
             {
                 NetworkManager.CallOnMainThread(ShowErrorText, errorMessage);
-            }
-        });
+            });
     }
 
     public void SignInButtonBehavior()
     {
-        _networkManager.signInAsync(UserNameField.text, PasswordField.text, (string errorMessage) =>
+        _networkManager.signInAsync(UserNameField.text, PasswordField.text, () =>
         {
-            if (errorMessage == null)
-            {
-                NetworkManager.CallOnMainThread(HideErrorText);
-                NetworkManager.CallOnMainThread(LoadCreateMatch);
-            }
-            else
-            {
-                NetworkManager.CallOnMainThread(ShowErrorText, errorMessage);
-            }
+            NetworkManager.CallOnMainThread(HideErrorText);
+            NetworkManager.CallOnMainThread(LoadCreateMatch);
+        }, (string errorMessage) => 
+        {
+            NetworkManager.CallOnMainThread(ShowErrorText, errorMessage);
         });
     }
 

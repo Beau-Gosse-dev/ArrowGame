@@ -25,6 +25,10 @@ class NetworkManager : MonoBehaviour
 
     public string PlayFabId;
 
+    public GameUser CurrentUser { get; set; }
+
+    public bool IsLoggedInWithUsernamePassword { get; private set; }
+
     public static bool StartFromBeginingIfNotStartedYet()
     {
         if (!hasStarted)
@@ -47,8 +51,6 @@ class NetworkManager : MonoBehaviour
             Debug.Log("Successfully added friend: " + userIdOfFriend);
         }, LogError);          
     }
-
-    public GameUser CurrentUser { get; set; }
 
     void Awake()
     {
@@ -82,7 +84,6 @@ class NetworkManager : MonoBehaviour
 
     void Start()
     {
-        InitializeUserName();
     }
 
     void Update()
@@ -349,41 +350,29 @@ class NetworkManager : MonoBehaviour
         return match;
     }
 
-    public void LogOut(Func handleLogOutResult)
+    public void LogOut(Func handleLogOutResult, Func handleError)
     {
-        ParseUser.LogOutAsync().ContinueWith(T =>
+        var unlinkRequest = new UnlinkCustomIDRequest()
         {
-            CallOnMainThread(handleLogOutResult);
-        });
+            CustomId = UniqueDeviceGuid.GetValue().ToString()
+        };
+
+        PlayFabClientAPI.UnlinkCustomID(unlinkRequest, 
+            (result) => 
+            {
+                CallOnMainThread(handleLogOutResult);
+                IsLoggedInWithUsernamePassword = false;
+            }, 
+            (error) =>
+            {
+                CallOnMainThread(handleError);
+            });
     }
 
-    public bool IsLoggedIn
+    public void InitializeUserName(string username, string userId)
     {
-        get
-        {
-            return PlayFabClientAPI.IsClientLoggedIn();
-        }
-    }
-
-    public void InitializeUserName()
-    {
-        if (IsLoggedIn)
-        {
-            try
-            {
-                CurrentUser.UserName = ParseUser.CurrentUser.Username;
-                CurrentUser.UserId = ParseUser.CurrentUser.ObjectId;
-            }
-            catch (NullReferenceException e)
-            {
-                // TODO: Figure out what the fuck is going on here. Why are we hitting this when nothing is null in the debugger? Async stuff?
-            }
-        }
-        else
-        {
-            CurrentUser.UserName = "Not Logged In";
-            CurrentUser.UserId = "Not Logged In";
-        }
+        CurrentUser.UserName = username;
+        CurrentUser.UserId = userId;
     }
 
     /// <summary>
@@ -392,45 +381,8 @@ class NetworkManager : MonoBehaviour
     /// <param name="username">Username to sign in with</param>
     /// <param name="password">Password to sign in with</param>
     /// <param name="processSignInResult">An action that takes a string to process after sign in. The string is null if the sign in was successful</param>
-    public void signUpAsync(string username, string password, Action<string> processSignInResult)
+    public void signUpAsync(string username, string password, Action processSuccess, Action<string> processFailure)
     {
-        ParseUser user = new ParseUser()
-        {
-            Username = username,
-            Password = password
-            //,Email = null
-        };
-
-        // other fields can be set just like with ParseObject
-        //user["phone"] = "650-555-0000";
-
-        user.SignUpAsync().ContinueWith(t =>
-        {
-            string signInResultMessage = null;
-            if (t.IsCanceled)
-            {
-                Debug.Log("Canceled Sign Up");
-            }
-            if (t.IsFaulted)
-            {
-                Debug.Log("Sign up faulted");
-
-                foreach (var ex in t.Exception.InnerExceptions)
-                {
-                    ParseException parseException = (ParseException)ex;
-                    signInResultMessage = parseException.Message;
-                    Debug.Log("Error message " + signInResultMessage);
-                    Debug.Log("Error code: " + parseException.Code);
-                }
-            }
-            else
-            {
-                // Login was successful.
-                Debug.Log("Sign up success");
-            }
-            processSignInResult(signInResultMessage);
-        });
-
         var registerPlayFabUserRequest = new RegisterPlayFabUserRequest()
         {
             TitleId = "8DA7",
@@ -439,12 +391,26 @@ class NetworkManager : MonoBehaviour
             RequireBothUsernameAndEmail = false
         };
 
-        PlayFabClientAPI.RegisterPlayFabUser(registerPlayFabUserRequest, (result) => {
+        PlayFabClientAPI.RegisterPlayFabUser(registerPlayFabUserRequest, (result) => 
+        {
             Debug.Log("PlayFab Registered username: " + result.Username);
+
+            // Save this newly registered user to this device ID so they will auto login next time
+            var requestToLink = new LinkCustomIDRequest()
+            {
+                CustomId = UniqueDeviceGuid.GetValue().ToString(),
+                ForceLink = true
+            };
+            PlayFabClientAPI.LinkCustomID(requestToLink, (linkResult) =>
+            {
+                IsLoggedInWithUsernamePassword = true;
+                processSuccess();
+            }, (error) => 
+            {
+                processFailure(error.ErrorMessage);
+            });
         },
-        (error) => {
-            processSignInResult(error.ErrorMessage);
-        });
+        (error) => { processFailure(error.ErrorMessage); });
     }
 
     /// <summary>
@@ -453,45 +419,44 @@ class NetworkManager : MonoBehaviour
     /// <param name="username">Username to sign in with</param>
     /// <param name="password">Password to sign in with</param>
     /// <param name="processSignInResult">An action that takes a string to process after sign in. The string is null if the sign in was successful</param>
-    public void signInAsync(string username, string password, Action<string> processSignInResult)
+    public void signInAsync(string username, string password, Action processSuccess, Action<string> processError)
     {
-        // TODO save actual username as lowercase so that we don't have dups, but also save display name with cases.
-        ParseUser.LogInAsync(username, password).ContinueWith(t =>
-        {
-            string signInResultMessage = null;
-            if (t.IsCanceled)
-            {
-                Debug.Log("Canceled Sign In");
-            }
-            if (t.IsFaulted)
-            {
-                Debug.Log("Sign in faulted");
-                foreach (var ex in t.Exception.InnerExceptions)
-                {
-                    ParseException parseException = (ParseException)ex;
-                    signInResultMessage = parseException.Message;
-                    Debug.Log("Error message " + signInResultMessage);
-                    Debug.Log("Error code: " + parseException.Code);
-                }
-            }
-            else
-            {
-                // Login was successful.
-                Debug.Log("Sign in success");
-            }
-
-            processSignInResult(signInResultMessage);
-        });
-
         LoginWithPlayFabRequest request = new LoginWithPlayFabRequest
         {
             Username = username,
-            Password = password
+            Password = password,
+            InfoRequestParameters = new GetPlayerCombinedInfoRequestParams() { GetUserAccountInfo = true }
         };
 
-        PlayFabClientAPI.LoginWithPlayFab(request, (result) => {
+        // We are signing in, so the current deviceID doesn't have an associated email/password
+        // When we sign in, we need to reset the "unique" device ID to the ID of users who just logged in.
+        
+        PlayFabClientAPI.LoginWithPlayFab(request, (result) => 
+        {
             Debug.Log("PlayFab Logged in username: " + request.Username);
-        }, LogError);
+            InitializeUserName(username, result.PlayFabId);
+            processSuccess();
+            IsLoggedInWithUsernamePassword = true;
+
+            // Save this newly registered user to this device ID so they will auto login next time
+            var requestToLink = new LinkCustomIDRequest()
+            {
+                CustomId = UniqueDeviceGuid.GetValue().ToString(),
+                ForceLink = true
+            };
+            PlayFabClientAPI.LinkCustomID(requestToLink, (linkResult) =>
+            {
+                IsLoggedInWithUsernamePassword = true;
+                processSuccess();
+            }, (error) =>
+            {
+                processError(error.ErrorMessage);
+            });
+
+        }, (error) => 
+        {
+            processError(error.ErrorMessage);
+        });
     }
 
     private void LogError(PlayFabError error)
@@ -577,13 +542,28 @@ class NetworkManager : MonoBehaviour
         {
             TitleId = "8DA7",
             CreateAccount = true,
-            CustomId = UniqueDeviceGuid.GetValue().ToString()
+            CustomId = UniqueDeviceGuid.GetValue().ToString(),
+            InfoRequestParameters = new GetPlayerCombinedInfoRequestParams() { GetUserAccountInfo = true }
         };
 
-        PlayFabClientAPI.LoginWithCustomID(request, (result) => {
-            Debug.Log("Logged in user: " + result.PlayFabId);
-            InitializeUserName();
-        }, LogError);
+        PlayFabClientAPI.LoginWithCustomID(request, 
+            (result) => 
+            {
+                string username = null;
+                if(result.InfoResultPayload != null && result.InfoResultPayload.AccountInfo != null && !string.IsNullOrEmpty(result.InfoResultPayload.AccountInfo.Username))
+                {
+                    username = result.InfoResultPayload.AccountInfo.Username;
+                    IsLoggedInWithUsernamePassword = true;
+                }
+                else
+                {
+                    username = result.PlayFabId;
+                    IsLoggedInWithUsernamePassword = false;
+                }
+
+                Debug.Log("Logged in user: " + username);
+                InitializeUserName(username, result.PlayFabId);
+            }, LogError);
     }
 }
 
@@ -611,6 +591,23 @@ public static class UniqueDeviceGuid
         }
 
         return guid;
+    }
+    public static void UpdateValueOnDisk(string id)
+    {
+        Guid guid = new Guid(id);
+        FileStream file;
+        if (File.Exists(Application.persistentDataPath + "/UniqueDeviceGuid.dat"))
+        {
+            file = File.Open(Application.persistentDataPath + "/UniqueDeviceGuid.dat", FileMode.Open);
+        }
+        else
+        {
+            file = File.Create(Application.persistentDataPath + "/UniqueDeviceGuid.dat");
+        }
+
+        BinaryFormatter binaryFormatter = new BinaryFormatter();        
+        binaryFormatter.Serialize(file, guid);
+        file.Close();
     }
 }
 

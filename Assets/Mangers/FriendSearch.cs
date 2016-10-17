@@ -59,7 +59,7 @@ public class FriendSearch : MonoBehaviour {
                     {
                         ButtonAddFriend newButton = Instantiate(buttonAddFriendPrefab);
                         newButton.iconOfFriend = null; // TODO get Facebook pictures
-                        newButton.button.GetComponentInChildren<Text>().text = user.usernameOfFriend;
+                        newButton.button.GetComponentInChildren<Text>().text = "Add friend: " + user.usernameOfFriend;
                         newButton.usernameOfFriend = user.usernameOfFriend;
                         newButton.userIdOfFriend = user.userIdOfFriend;
                         newButton.button.onClick.AddListener(newButton.addFriend);

@@ -51,6 +51,10 @@ public class Settings : MonoBehaviour {
                 ButtonText.text = "Not Signed In";
                 // TODO maybe show progress to make sure a user isn't doing anything when they think they are logged out
                 // Handle errors if the logout didn't work.
+            },
+            () => 
+            {
+                PendingImage.enabled = false;
             });
             
         }

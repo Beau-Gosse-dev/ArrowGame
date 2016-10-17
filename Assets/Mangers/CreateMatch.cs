@@ -36,7 +36,7 @@ public class CreateMatch : MonoBehaviour {
             ButtonCreateMatch newButton = Instantiate(buttonCreateMatchPrefab);
 
             newButton.iconOfFriend = null; // TODO add picture
-            newButton.button.GetComponentInChildren<Text>().text = "Create New with: " + userName;
+            newButton.button.GetComponentInChildren<Text>().text = "Create new match with: " + userName;
             newButton.usernameOfFriend = userName;
             newButton.userIdOfFriend = userId;
             newButton.button.onClick.AddListener(newButton.createMatch);
