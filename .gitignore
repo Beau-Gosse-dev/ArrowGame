@@ -34,4 +34,7 @@ ehthumbs.db
 [Tt]humbs.db
 [Dd]esktop.ini
 
+
 packages/
+
+!Assets/Parse/*.dll
