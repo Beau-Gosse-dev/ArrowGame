@@ -48,7 +48,7 @@ class NetworkManager : MonoBehaviour
         PlayFabClientAPI.AddFriend(request, (result) =>
         {
             Debug.Log("Successfully added friend: " + userIdOfFriend);
-        }, LogError);          
+        }, (error) => LogError(error, "AddFriend"));          
     }
 
     void Awake()
@@ -118,8 +118,8 @@ class NetworkManager : MonoBehaviour
         
         levelDef.ShotArrows = JsonConvert.DeserializeObject<List<ShotArrow>>(matchObject.Get<string>("ShotArrows"));
         currentMatch = matchObject;
-        SceneManager.LoadScene("Friend");
     }
+
     public void SaveLevelDefinitionToServer()
     {
         currentMatch["isPlayerLeftTurn"] = levelDef.IsPlayerLeftTurn;
@@ -165,7 +165,7 @@ class NetworkManager : MonoBehaviour
             {
                 CallOnMainThread(() => loadFriends(friend.Username, friend.FriendPlayFabId));
             }
-        }, LogError);
+        }, (error) => LogError(error, "GetFriendsList"));
     }
 
     public void searchFriends(string searchString, Action<IEnumerable<ButtonAddFriendContent>> populateResults)
@@ -179,59 +179,54 @@ class NetworkManager : MonoBehaviour
         PlayFabClientAPI.GetAccountInfo(userNameRequest, (result) =>
         {
             populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
-        }, LogError);
+        }, (error) => LogError(error, "GetAccountInfo(userNameRequest"));
 
         PlayFabClientAPI.GetAccountInfo(emailRequest, (result) =>
         {
             populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
-        }, LogError);
+        }, (error) => LogError(error, "GetAccountInfo(emailRequest"));
 
         PlayFabClientAPI.GetAccountInfo(idRequest, (result) =>
         {
             populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
-        }, LogError);
+        }, (error) => LogError(error, "GetAccountInfo(idRequest"));
 
         PlayFabClientAPI.GetAccountInfo(displayNameRequest, (result) =>
         {
             populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
-        }, LogError);
+        }, (error) => LogError(error, "GetAccountInfo(displayNameRequest"));
+    }
+
+    private string getGroupId(string friendId)
+    {
+        List<string> friendAndSelfId = new List<string>() { friendId, CurrentUser.UserId };
+        friendAndSelfId.Sort();
+        return string.Concat(friendAndSelfId[0], '-', friendAndSelfId[1]);
     }
 
     public void createMatch(string userIdOfFriend, string usernameOfFriend)
     {
-        this.levelDef.LevelDefinitionSetDefault();
-
-        ParseObject matchParseObject = this.GetLevelDefintionParseObject(
-            ParseUser.CurrentUser.ObjectId,
-            ParseUser.CurrentUser.Username,
-            userIdOfFriend,
-            usernameOfFriend,
-            levelDef);
-
-        matchParseObject.SaveAsync();
-        /*  OLD PARSE ABOVE */
-
-        string groupId = ""; 
-        
-        PlayFabClientAPI.CreateSharedGroup(new CreateSharedGroupRequest(),
+        PlayFabClientAPI.CreateSharedGroup(new CreateSharedGroupRequest() {SharedGroupId = getGroupId(userIdOfFriend) },
             (creatResult) =>
             {
                 Debug.Log("Success: CreateSharedGroup");
 
                 AddSharedGroupMembersRequest addToGroupRequest = new AddSharedGroupMembersRequest()
                 {
-                    PlayFabIds = new List<string>() { "80ABB42ED024101C", "A7E790B60191A55A" },
+                    PlayFabIds = new List<string>() { userIdOfFriend },
                     SharedGroupId = creatResult.SharedGroupId                    
                 };
-                groupId = creatResult.SharedGroupId;
+
                 PlayFabClientAPI.AddSharedGroupMembers(addToGroupRequest, 
                     (addResult) =>
                     {
                         Debug.Log("Success: AddSharedGroupMembers");
 
+                        var levelDefinition = new LevelDefinition();
+                        levelDefinition.LevelDefinitionSetDefault();
                         UpdateSharedGroupDataRequest updateDataRequest = new UpdateSharedGroupDataRequest()
                         {
-                            Data = new Dictionary<string, string>() { { "LevelDefinition", JsonConvert.SerializeObject(levelDef).ToString() } },
+                            Data = new Dictionary<string, string>() { { "LevelDefinition", JsonConvert.SerializeObject(levelDefinition).ToString() } },
                             SharedGroupId = addToGroupRequest.SharedGroupId,
                             Permission = UserDataPermission.Private // TODO: does this work?
                         };
@@ -240,24 +235,12 @@ class NetworkManager : MonoBehaviour
                             (result) =>
                             {
                                 Debug.Log("Success: UpdateSharedGroupData");
-                            }, LogError
+                            }, (error) => LogError(error, "UpdateSharedGroupData")
                         );
-                    }, LogError
+                    }, (error) => LogError(error, "AddSharedGroupMembers")
                 );
-            }, LogError
+            }, (error) => LogError(error, "CreateSharedGroup")
         );
-
-        GetSharedGroupDataRequest getRequest = new GetSharedGroupDataRequest()
-        {
-            SharedGroupId = "sd-90F89BAB81C7AC59",
-            GetMembers = true
-        };
-
-        PlayFabClientAPI.GetSharedGroupData(getRequest, 
-            (result) =>
-            {
-            }, LogError);
-
     }
 
     public void loadMatch(string matchId)
@@ -269,64 +252,60 @@ class NetworkManager : MonoBehaviour
             NetworkManager.CallOnMainThread(() =>
             {
                 this.InitializeFromParseObject(match);
+
+                SceneManager.LoadScene("Friend");
             });
         });
-
-
     }
 
-    public ParseObject GetLevelDefintionParseObject(string playerLeftId, string playerLeftName, string playerRightId, string playerRightName, LevelDefinition levelDefinition)
+    public void GetMatchesAsync(Action<List<Match>> doWithMatches)
     {
-        ParseObject newParseObject = new ParseObject("MatchTest");
-        newParseObject["isPlayerLeftTurn"] = levelDefinition.IsPlayerLeftTurn;
-        newParseObject["playerDistanceFromCenter"] = levelDefinition.PlayerDistanceFromCenter;
-        newParseObject["playerLeftHealth"] = levelDefinition.PlayerLeftHealth;
-        newParseObject["playerRightHealth"] = levelDefinition.PlayerRightHealth;
-        newParseObject["wallHeight"] = levelDefinition.WallHeight;
-        newParseObject["wallPosition"] = levelDefinition.WallPosition;
-        newParseObject["gameState"] = levelDefinition.gameState.ToString();
-        newParseObject["gameType"] = levelDefinition.gameType.ToString();
+        //// TODO: Can this function be cleaned up?
+        //ParseQuery<ParseObject> queryLeftPlayer = new ParseQuery<ParseObject>("MatchTest").WhereEqualTo("playerLeftId", ParseUser.CurrentUser.ObjectId);
+        //ParseQuery<ParseObject> queryRightPlayer = new ParseQuery<ParseObject>("MatchTest").WhereEqualTo("playerRightId", ParseUser.CurrentUser.ObjectId);
+        //ParseQuery<ParseObject> queryBothSides = queryLeftPlayer.Or(queryRightPlayer);
+        //return queryBothSides.FindAsync().ContinueWith(t =>
+        //{
+        //    var matches = new List<Match>();
+        //    IEnumerable<ParseObject> results = t.Result;
+        //    foreach (ParseObject parseObject in results)
+        //    {
+        //        matches.Add(getMatchFromParseObject(parseObject));
+        //    }
+        //    return matches;
+        //});
 
-        newParseObject["LastShotStartX"] = levelDefinition.LastShotStartX;
-        newParseObject["LastShotStartY"] = levelDefinition.LastShotStartY;
-        newParseObject["LastShotEndX"] = levelDefinition.LastShotEndX;
-        newParseObject["LastShotEndtY"] = levelDefinition.LastShotEndY;
+        /// OLD PARSE ABOVE
 
-        newParseObject["playerLeftId"] = playerLeftId;
-        newParseObject["playerRightId"] = playerRightId;
-        newParseObject["playerLeftName"] = playerLeftName;
-        newParseObject["playerRightName"] = playerRightName;
-
-        newParseObject["RebuttalTextEnabled"] = levelDefinition.RebuttalTextEnabled;
-
-        newParseObject["ShotArrows"] = JsonConvert.SerializeObject(
-            levelDefinition.ShotArrows,
-            Formatting.Indented,
-            new JsonSerializerSettings
-            {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-            }
-        );
-
-        return newParseObject;
-    }
-
-    public Task<List<Match>> GetMatchesAsync()
-    {
-        // TODO: Can this function be cleaned up?
-        ParseQuery<ParseObject> queryLeftPlayer = new ParseQuery<ParseObject>("MatchTest").WhereEqualTo("playerLeftId", ParseUser.CurrentUser.ObjectId);
-        ParseQuery<ParseObject> queryRightPlayer = new ParseQuery<ParseObject>("MatchTest").WhereEqualTo("playerRightId", ParseUser.CurrentUser.ObjectId);
-        ParseQuery<ParseObject> queryBothSides = queryLeftPlayer.Or(queryRightPlayer);
-        return queryBothSides.FindAsync().ContinueWith(t =>
+        PlayFabClientAPI.GetFriendsList(new GetFriendsListRequest(), (result) =>
         {
-            var matches = new List<Match>();
-            IEnumerable<ParseObject> results = t.Result;
-            foreach (ParseObject parseObject in results)
+            foreach (var friend in result.Friends)
             {
-                matches.Add(getMatchFromParseObject(parseObject));
+                var groupRequest = new GetSharedGroupDataRequest() { SharedGroupId = getGroupId(friend.FriendPlayFabId) };
+                PlayFabClientAPI.GetSharedGroupData(groupRequest, (groupResult) =>
+                {
+                    var matches = new List<Match>();
+                    // TODO, don't hard code string
+                    if (groupResult.Data != null && groupResult.Data["LevelDefinition"] != null)
+                    {
+                        var levelDef = JsonConvert.DeserializeObject<LevelDefinition>(groupResult.Data["LevelDefinition"].Value);
+                        matches.Add(new Match()
+                        {
+                            friendId = friend.FriendPlayFabId,
+                            friendName = friend.Username,
+                            leftHealth = levelDef.PlayerLeftHealth,
+                            rightHealth = levelDef.PlayerRightHealth,
+                            matchId = groupRequest.SharedGroupId
+                        });
+                    }
+
+                    doWithMatches(matches);
+                }, (error) => 
+                {
+
+                });
             }
-            return matches;
-        });
+        }, (error) => LogError(error, "GetFriendsList"));
     }
 
     private Match getMatchFromParseObject(ParseObject parseObject)
@@ -458,9 +437,9 @@ class NetworkManager : MonoBehaviour
         });
     }
 
-    private void LogError(PlayFabError error)
+    private void LogError(PlayFabError error, string location = "")
     {
-        Debug.Log("PlayFab Error: " + error.ErrorMessage + " Details: " + error.ErrorDetails);
+        Debug.Log(location + " PlayFab Error: " + error.ErrorMessage + " Details: " + error.ErrorDetails);
     }
     
     class CallInfo
@@ -562,7 +541,7 @@ class NetworkManager : MonoBehaviour
 
                 Debug.Log("Logged in user: " + username);
                 InitializeUserName(username, result.PlayFabId);
-            }, LogError);
+            }, (error) => LogError(error, "LoginWithCustomID"));
     }
 }
 

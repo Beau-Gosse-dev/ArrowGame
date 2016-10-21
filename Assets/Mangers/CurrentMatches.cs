@@ -32,9 +32,9 @@ public class CurrentMatches : MonoBehaviour {
         //
         // Populate match buttons where current player is left player or the right player
         //
-        _networkManager.GetMatchesAsync().ContinueWith(t =>
+        _networkManager.GetMatchesAsync(matches =>
         {
-            foreach (Match match in t.Result)
+            foreach (Match match in matches)
             {
                 // Need to clone match because the async call overwrites the reference it seems. Need to research.
                 Match clonedMatch = (Match)match.Clone();
