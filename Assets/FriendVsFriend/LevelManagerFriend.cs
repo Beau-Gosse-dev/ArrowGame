@@ -45,7 +45,6 @@ public class LevelManagerFriend : MonoBehaviour
     // Use this for initialization
     void Start()
     {        
-        startPlaying(); // TODO remove this, it is just for easy testing in the unity editor
     }
 
     void Update()

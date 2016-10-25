@@ -335,6 +335,7 @@ class NetworkManager : MonoBehaviour
     private void LogError(PlayFabError error, string location = "")
     {
         Debug.Log(location + " PlayFab Error: " + error.ErrorMessage + " Details: " + error.ErrorDetails);
+        throw new Exception(location + " PlayFab Error: " + error.ErrorMessage + " Details: " + error.ErrorDetails);
     }
     
     class CallInfo
