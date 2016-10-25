@@ -4,11 +4,9 @@ using System.Collections.Generic;
 
 using UnityEngine.SceneManagement;
 using Assets.Networking;
-using System.Threading.Tasks;
 using System;
 using Assets.Mangers;
 using Newtonsoft.Json;
-using Assets.GameObjects;
 
 using PlayFab;
 using PlayFab.ClientModels;
@@ -61,12 +59,8 @@ class NetworkManager : MonoBehaviour
 
             // This NetworkManager object will persist until the game is closed
             DontDestroyOnLoad(gameObject);
-
-            // TODO: Apparently you can't call any parse stuff until this scene has finished. Maybe we need to wrap the Parse stuff in a outer scene that loads this one.
-            //CurrentUser = new GameUser();
-            CurrentUser = new GameUser();
             
-            //levelDef = new LevelDefinition();
+            CurrentUser = new GameUser();
 
             // Now that the network manager is ready, head to the menu
             SceneManager.LoadScene("StartMenu");
@@ -233,23 +227,6 @@ class NetworkManager : MonoBehaviour
 
     public void GetMatchesAsync(Action<List<LevelDefinition>> doWithMatches)
     {
-        //// TODO: Can this function be cleaned up?
-        //ParseQuery<ParseObject> queryLeftPlayer = new ParseQuery<ParseObject>("MatchTest").WhereEqualTo("playerLeftId", ParseUser.CurrentUser.ObjectId);
-        //ParseQuery<ParseObject> queryRightPlayer = new ParseQuery<ParseObject>("MatchTest").WhereEqualTo("playerRightId", ParseUser.CurrentUser.ObjectId);
-        //ParseQuery<ParseObject> queryBothSides = queryLeftPlayer.Or(queryRightPlayer);
-        //return queryBothSides.FindAsync().ContinueWith(t =>
-        //{
-        //    var matches = new List<Match>();
-        //    IEnumerable<ParseObject> results = t.Result;
-        //    foreach (ParseObject parseObject in results)
-        //    {
-        //        matches.Add(getMatchFromParseObject(parseObject));
-        //    }
-        //    return matches;
-        //});
-
-        /// OLD PARSE ABOVE
-
         PlayFabClientAPI.GetFriendsList(new GetFriendsListRequest(), (result) =>
         {
             foreach (var friend in result.Friends)

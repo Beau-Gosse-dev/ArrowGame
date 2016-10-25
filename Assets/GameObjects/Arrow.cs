@@ -196,7 +196,7 @@ public class Arrow : MonoBehaviour
                 // Allow another shot
                 aimLine.ArrowHit(col);
 
-                // Upload the new state to Parse so when the next player comes they can play now.
+                // Upload the new state to the server so when the next player comes they can play now.
                 _networkManager.SaveLevelDefinitionToServer();
             }
 
