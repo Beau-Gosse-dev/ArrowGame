@@ -3,6 +3,8 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 using Assets.Networking;
 using UnityEngine.SceneManagement;
+using Assets.Mangers;
+using System;
 
 public class CurrentMatches : MonoBehaviour {
     
@@ -34,29 +36,48 @@ public class CurrentMatches : MonoBehaviour {
         //
         _networkManager.GetMatchesAsync(matches =>
         {
-            foreach (Match match in matches)
+            foreach (LevelDefinition match in matches)
             {
                 // Need to clone match because the async call overwrites the reference it seems. Need to research.
-                Match clonedMatch = (Match)match.Clone();
+                LevelDefinition clonedMatch = match.Clone();
 
                 NetworkManager.CallOnMainThread(() => AddMatchButton(clonedMatch));
             }
         });
     }
 
-    private void AddMatchButton(Match match)
+    private void AddMatchButton(LevelDefinition match)
     {
+        string friendName;
+        string friendId;
+        if (_networkManager.CurrentUser.UserId == match.PlayerLeftId)
+        {
+            friendName = match.PlayerRightName;
+            friendId = match.PlayerRightId;
+        }
+        else if(_networkManager.CurrentUser.UserId == match.PlayerLeftId)
+        {
+            friendName = match.PlayerLeftName;
+            friendId = match.PlayerLeftId;
+        }
+        else
+        {
+            return;
+            //throw new Exception("Loading match where current user isn't a player!");
+        }
+
         ButtonCurrentMatch newButton = Instantiate(buttonCurrentMatchPrefab);
         newButton.iconOfFriend = null; // TODO: Add icon from Facebook or something
-        newButton.button.GetComponentInChildren<Text>().text = "Match in Progress: " + match.friendName;
-        newButton.usernameOfFriend = match.friendName;
-        newButton.userIdOfFriend = match.friendId;
-        newButton.matchId = match.matchId;
+        newButton.button.GetComponentInChildren<Text>().text = "Match in Progress: " + friendName;
+        newButton.usernameOfFriend = friendName;
+        newButton.userIdOfFriend = friendName;
+        //newButton.matchId = _networkManager.getgr;
+        newButton.levelDefinition = match;
         newButton.button.onClick.AddListener(newButton.LoadMatch);
         newButton.transform.SetParent(matchPanelContent);
         newButton.transform.localScale = new Vector3(1, 1, 1);
-        newButton.playerLeftHealth = match.leftHealth;
-        newButton.playerRightHealth = match.rightHealth;
+        newButton.playerLeftHealth = match.PlayerLeftHealth;
+        newButton.playerRightHealth = match.PlayerRightHealth;
         loadHealthSliders(newButton);
     }
 

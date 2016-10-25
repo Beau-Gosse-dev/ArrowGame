@@ -1,4 +1,6 @@
 ﻿using Assets.GameObjects;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 
 namespace Assets.Mangers
@@ -27,6 +29,24 @@ namespace Assets.Mangers
 
         public bool RebuttalTextEnabled;
 
+        public LevelDefinition(string leftId, string leftName, string rightId, string rightName)
+        {
+            IsPlayerLeftTurn = true;
+            PlayerDistanceFromCenter = 5.0f;
+            PlayerLeftHealth = 100.0f;
+            PlayerRightHealth = 100.0f;
+            ShotArrows = new List<ShotArrow>();
+            WallHeight = 1;
+            WallPosition = 0;
+            gameState = GameState.Playing;
+            gameType = GameType.Online;
+            RebuttalTextEnabled = false;
+
+            PlayerLeftId = leftId;
+            PlayerLeftName = leftName;
+            PlayerRightId = rightId;
+            PlayerRightName = rightName;
+        }
 
         public void LevelDefinitionSetDefault()
         {
@@ -40,6 +60,12 @@ namespace Assets.Mangers
             gameState = GameState.Playing;
             gameType = GameType.Online;
             RebuttalTextEnabled = false;
+        }
+
+        public LevelDefinition Clone()
+        {
+            string serializedLevelDef = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<LevelDefinition>(serializedLevelDef);
         }
     }
 }

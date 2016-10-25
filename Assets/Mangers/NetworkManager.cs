@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using Parse;
+
 using UnityEngine.SceneManagement;
 using Assets.Networking;
 using System.Threading.Tasks;
@@ -18,7 +18,6 @@ using System.IO;
 class NetworkManager : MonoBehaviour
 {
     public LevelDefinition levelDef;
-    private ParseObject currentMatch;
 
     private static bool hasStarted = false;
 
@@ -67,7 +66,7 @@ class NetworkManager : MonoBehaviour
             //CurrentUser = new GameUser();
             CurrentUser = new GameUser();
             
-            levelDef = new LevelDefinition();
+            //levelDef = new LevelDefinition();
 
             // Now that the network manager is ready, head to the menu
             SceneManager.LoadScene("StartMenu");
@@ -93,68 +92,41 @@ class NetworkManager : MonoBehaviour
         }
     }
 
-    public void InitializeFromParseObject(ParseObject matchObject)
-    {
-        levelDef.IsPlayerLeftTurn = matchObject.Get<bool>("isPlayerLeftTurn");
-        levelDef.PlayerDistanceFromCenter = matchObject.Get<float>("playerDistanceFromCenter");
-        levelDef.PlayerLeftHealth = matchObject.Get<float>("playerLeftHealth");
-        levelDef.PlayerRightHealth = matchObject.Get<float>("playerRightHealth");
-        levelDef.WallHeight = matchObject.Get<int>("wallHeight");
-        levelDef.WallPosition = matchObject.Get<float>("wallPosition");
-        levelDef.gameState = (GameState)Enum.Parse(typeof(GameState), matchObject.Get<string>("gameState"));
-        levelDef.gameType = (GameType)Enum.Parse(typeof(GameType), matchObject.Get<string>("gameType"));
-        
-        levelDef.LastShotStartX = matchObject.Get<float>("LastShotStartX");
-        levelDef.LastShotStartY = matchObject.Get<float>("LastShotStartY");
-        levelDef.LastShotEndX = matchObject.Get<float>("LastShotEndX");
-        levelDef.LastShotEndY = matchObject.Get<float>("LastShotEndtY");
-        
-        levelDef.PlayerLeftId = matchObject.Get<string>("playerLeftId");
-        levelDef.PlayerLeftName = matchObject.Get<string>("playerLeftName");
-        levelDef.PlayerRightId = matchObject.Get<string>("playerRightId");
-        levelDef.PlayerRightName = matchObject.Get<string>("playerRightName");
-        
-        levelDef.RebuttalTextEnabled = matchObject.Get<bool>("RebuttalTextEnabled");
-        
-        levelDef.ShotArrows = JsonConvert.DeserializeObject<List<ShotArrow>>(matchObject.Get<string>("ShotArrows"));
-        currentMatch = matchObject;
-    }
-
     public void SaveLevelDefinitionToServer()
     {
-        currentMatch["isPlayerLeftTurn"] = levelDef.IsPlayerLeftTurn;
-        currentMatch["playerDistanceFromCenter"] = levelDef.PlayerDistanceFromCenter;
-        currentMatch["playerLeftHealth"] = levelDef.PlayerLeftHealth;
-        currentMatch["playerRightHealth"] = levelDef.PlayerRightHealth;
-        currentMatch["wallHeight"] = levelDef.WallHeight;
-        currentMatch["wallPosition"] = levelDef.WallPosition;
-        currentMatch["gameState"] = levelDef.gameState.ToString();
-        currentMatch["gameType"] = levelDef.gameType.ToString();
+        //currentMatch["isPlayerLeftTurn"] = levelDef.IsPlayerLeftTurn;
+        //currentMatch["playerDistanceFromCenter"] = levelDef.PlayerDistanceFromCenter;
+        //currentMatch["playerLeftHealth"] = levelDef.PlayerLeftHealth;
+        //currentMatch["playerRightHealth"] = levelDef.PlayerRightHealth;
+        //currentMatch["wallHeight"] = levelDef.WallHeight;
+        //currentMatch["wallPosition"] = levelDef.WallPosition;
+        //currentMatch["gameState"] = levelDef.gameState.ToString();
+        //currentMatch["gameType"] = levelDef.gameType.ToString();
 
-        currentMatch["LastShotStartX"] = levelDef.LastShotStartX;
-        currentMatch["LastShotStartY"] = levelDef.LastShotStartY;
-        currentMatch["LastShotEndX"] = levelDef.LastShotEndX;
-        currentMatch["LastShotEndtY"] = levelDef.LastShotEndY;
+        //currentMatch["LastShotStartX"] = levelDef.LastShotStartX;
+        //currentMatch["LastShotStartY"] = levelDef.LastShotStartY;
+        //currentMatch["LastShotEndX"] = levelDef.LastShotEndX;
+        //currentMatch["LastShotEndtY"] = levelDef.LastShotEndY;
 
-        currentMatch["RebuttalTextEnabled"] = levelDef.RebuttalTextEnabled;
+        //currentMatch["RebuttalTextEnabled"] = levelDef.RebuttalTextEnabled;
 
-        currentMatch["ShotArrows"] = JsonConvert.SerializeObject(
-            levelDef.ShotArrows,
-            Formatting.Indented,
-            new JsonSerializerSettings
-            {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-            }
-        );
+        //currentMatch["ShotArrows"] = JsonConvert.SerializeObject(
+        //    levelDef.ShotArrows,
+        //    Formatting.Indented,
+        //    new JsonSerializerSettings
+        //    {
+        //        ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+        //    }
+        //);
 
-        currentMatch.SaveAsync().ContinueWith(t =>
-        {
-            Debug.Log("Canceled: " + t.IsCanceled);
-            Debug.Log("IsCompleted: " + t.IsCompleted);
-            Debug.Log("IsFaulted: " + t.IsFaulted);
-            Debug.Log("Exception: " + t.Exception.ToString());
-            Debug.Log("InnerException: " + t.Exception.InnerException.ToString());
-        });
+        //currentMatch.SaveAsync().ContinueWith(t =>
+        //{
+        //    Debug.Log("Canceled: " + t.IsCanceled);
+        //    Debug.Log("IsCompleted: " + t.IsCompleted);
+        //    Debug.Log("IsFaulted: " + t.IsFaulted);
+        //    Debug.Log("Exception: " + t.Exception.ToString());
+        //    Debug.Log("InnerException: " + t.Exception.InnerException.ToString());
+        //});
     }
 
     public void loadFriends(Action<string, string> loadFriends)
@@ -206,7 +178,12 @@ class NetworkManager : MonoBehaviour
 
     public void createMatch(string userIdOfFriend, string usernameOfFriend)
     {
-        PlayFabClientAPI.CreateSharedGroup(new CreateSharedGroupRequest() {SharedGroupId = getGroupId(userIdOfFriend) },
+        var createGroupRequest = new CreateSharedGroupRequest()
+        {
+            SharedGroupId = getGroupId(userIdOfFriend)
+        };
+
+        PlayFabClientAPI.CreateSharedGroup(createGroupRequest,
             (creatResult) =>
             {
                 Debug.Log("Success: CreateSharedGroup");
@@ -222,8 +199,9 @@ class NetworkManager : MonoBehaviour
                     {
                         Debug.Log("Success: AddSharedGroupMembers");
 
-                        var levelDefinition = new LevelDefinition();
+                        var levelDefinition = new LevelDefinition(CurrentUser.UserId, CurrentUser.UserName, userIdOfFriend, usernameOfFriend);
                         levelDefinition.LevelDefinitionSetDefault();
+
                         UpdateSharedGroupDataRequest updateDataRequest = new UpdateSharedGroupDataRequest()
                         {
                             Data = new Dictionary<string, string>() { { "LevelDefinition", JsonConvert.SerializeObject(levelDefinition).ToString() } },
@@ -243,22 +221,17 @@ class NetworkManager : MonoBehaviour
         );
     }
 
-    public void loadMatch(string matchId)
+    public void loadMatch(LevelDefinition levelDefinition)
     {
-        ParseQuery<ParseObject> query = ParseObject.GetQuery("MatchTest");
-        query.GetAsync(matchId).ContinueWith(t =>
+        NetworkManager.CallOnMainThread(() =>
         {
-            ParseObject match = t.Result;
-            NetworkManager.CallOnMainThread(() =>
-            {
-                this.InitializeFromParseObject(match);
+            levelDef = levelDefinition;
 
-                SceneManager.LoadScene("Friend");
-            });
+            SceneManager.LoadScene("Friend");
         });
     }
 
-    public void GetMatchesAsync(Action<List<Match>> doWithMatches)
+    public void GetMatchesAsync(Action<List<LevelDefinition>> doWithMatches)
     {
         //// TODO: Can this function be cleaned up?
         //ParseQuery<ParseObject> queryLeftPlayer = new ParseQuery<ParseObject>("MatchTest").WhereEqualTo("playerLeftId", ParseUser.CurrentUser.ObjectId);
@@ -284,48 +257,18 @@ class NetworkManager : MonoBehaviour
                 var groupRequest = new GetSharedGroupDataRequest() { SharedGroupId = getGroupId(friend.FriendPlayFabId) };
                 PlayFabClientAPI.GetSharedGroupData(groupRequest, (groupResult) =>
                 {
-                    var matches = new List<Match>();
+                    var matches = new List<LevelDefinition>();
                     // TODO, don't hard code string
-                    if (groupResult.Data != null && groupResult.Data["LevelDefinition"] != null)
+                    if (groupResult.Data != null && groupResult.Data.ContainsKey("LevelDefinition"))
                     {
                         var levelDef = JsonConvert.DeserializeObject<LevelDefinition>(groupResult.Data["LevelDefinition"].Value);
-                        matches.Add(new Match()
-                        {
-                            friendId = friend.FriendPlayFabId,
-                            friendName = friend.Username,
-                            leftHealth = levelDef.PlayerLeftHealth,
-                            rightHealth = levelDef.PlayerRightHealth,
-                            matchId = groupRequest.SharedGroupId
-                        });
+                        matches.Add(levelDef);
                     }
 
                     doWithMatches(matches);
-                }, (error) => 
-                {
-
-                });
+                }, (error) => LogError(error, "GetSharedGroupData"));
             }
         }, (error) => LogError(error, "GetFriendsList"));
-    }
-
-    private Match getMatchFromParseObject(ParseObject parseObject)
-    {
-        var match = new Match();
-        // If the current user is the match's left player, show the right player on the button (the opponent)
-        if (parseObject.Get<string>("playerLeftId") == ParseUser.CurrentUser.ObjectId)
-        {
-            match.friendId = parseObject.Get<string>("playerRightId");
-            match.friendName = parseObject.Get<string>("playerRightName");
-        }
-        else
-        {
-            match.friendId = parseObject.Get<string>("playerLeftId");
-            match.friendName = parseObject.Get<string>("playerLeftName");
-        }
-        match.matchId = parseObject.ObjectId;
-        match.leftHealth = parseObject.Get<float>("playerLeftHealth");
-        match.rightHealth = parseObject.Get<float>("playerRightHealth");
-        return match;
     }
 
     public void LogOut(Func handleLogOutResult, Func handleError)

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Assets.Mangers;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class ButtonCurrentMatch : MonoBehaviour
@@ -7,9 +8,10 @@ public class ButtonCurrentMatch : MonoBehaviour
     public Image iconOfFriend;
     public string userIdOfFriend;
     public string usernameOfFriend;
-    public string matchId;
+    public LevelDefinition levelDefinition;
     public float playerLeftHealth;
     public float playerRightHealth;
+
 
     private NetworkManager _networkManager;
 
@@ -24,7 +26,7 @@ public class ButtonCurrentMatch : MonoBehaviour
 
     public void LoadMatch()
     {
-        _networkManager.loadMatch(matchId);
+        _networkManager.loadMatch(levelDefinition);
     }
 }
 
