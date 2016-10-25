@@ -224,7 +224,7 @@ class NetworkManager : MonoBehaviour
         });
     }
 
-    public void GetMatchesAsync(Action<List<LevelDefinition>> doWithMatches)
+    public void GetMatches(Action<LevelDefinition> doWithEachMatch)
     {
         PlayFabClientAPI.GetFriendsList(new GetFriendsListRequest(), (result) =>
         {
@@ -241,10 +241,22 @@ class NetworkManager : MonoBehaviour
                         matches.Add(levelDef);
                     }
 
-                    doWithMatches(matches);
+                    doWithEachMatch(matches.SingleOrDefault()); // There should only ever be 1 match with a friend.
                 }, (error) => LogError(error, "GetSharedGroupData"));
             }
         }, (error) => LogError(error, "GetFriendsList"));
+    }
+
+    public void ActOnNonMatches(string idOfFriend, Action doWithEachNonMatch)
+    {
+        var groupRequest = new GetSharedGroupDataRequest() { SharedGroupId = getGroupId(idOfFriend) };
+        PlayFabClientAPI.GetSharedGroupData(groupRequest, (groupResult) =>
+        {
+            if (groupResult.Data.Count == 0)
+            {
+                doWithEachNonMatch();
+            }
+        }, (error) => LogError(error, "ActOnNonMatches"));
     }
 
     public void LogOut(Func handleLogOutResult, Func handleError)

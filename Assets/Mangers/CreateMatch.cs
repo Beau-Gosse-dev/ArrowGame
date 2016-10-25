@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System.Linq;
+using System.Collections.Generic;
 
 public class CreateMatch : MonoBehaviour {
 
@@ -33,15 +35,18 @@ public class CreateMatch : MonoBehaviour {
     {
         _networkManager.loadFriends((string userName, string userId) =>
         {
-            ButtonCreateMatch newButton = Instantiate(buttonCreateMatchPrefab);
+            _networkManager.ActOnNonMatches(userId, () =>
+            {
+                ButtonCreateMatch newButton = Instantiate(buttonCreateMatchPrefab);
 
-            newButton.iconOfFriend = null; // TODO add picture
-            newButton.button.GetComponentInChildren<Text>().text = "Create new match with: " + userName;
-            newButton.usernameOfFriend = userName;
-            newButton.userIdOfFriend = userId;
-            newButton.button.onClick.AddListener(newButton.createMatch);
-            newButton.transform.SetParent(userPanelContent);
-            newButton.transform.localScale = new Vector3(1, 1, 1);
+                newButton.iconOfFriend = null; // TODO add picture
+                newButton.button.GetComponentInChildren<Text>().text = "Create new match with: " + userName;
+                newButton.usernameOfFriend = userName;
+                newButton.userIdOfFriend = userId;
+                newButton.button.onClick.AddListener(newButton.createMatch);
+                newButton.transform.SetParent(userPanelContent);
+                newButton.transform.localScale = new Vector3(1, 1, 1);
+            });
         });
     }
 
