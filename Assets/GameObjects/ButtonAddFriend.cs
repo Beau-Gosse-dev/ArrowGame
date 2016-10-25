@@ -20,7 +20,20 @@ public class ButtonAddFriend : MonoBehaviour
 
     public void addFriend()
     {
-        _networkManager.addFriend(userIdOfFriend);
+        _networkManager.addFriend(userIdOfFriend, () =>
+        {
+
+            button.enabled = false;
+            transform.FindChild("Image");
+            var children = gameObject.GetComponentsInChildren(typeof(Image));
+            foreach (var child in children)
+            {
+                if (child.name == "Image")
+                {
+                    ((Image)child).color = new Color(0, 1, 0);
+                }
+            }
+        });
     }
 }
 

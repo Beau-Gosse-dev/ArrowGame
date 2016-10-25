@@ -12,6 +12,7 @@ using PlayFab;
 using PlayFab.ClientModels;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
+using System.Linq;
 
 class NetworkManager : MonoBehaviour
 {
@@ -24,6 +25,7 @@ class NetworkManager : MonoBehaviour
     public GameUser CurrentUser { get; set; }
 
     public bool IsLoggedInWithUsernamePassword { get; private set; }
+    
 
     public static bool StartFromBeginingIfNotStartedYet()
     {
@@ -35,17 +37,19 @@ class NetworkManager : MonoBehaviour
         return false;
     }
 
-    public void addFriend(string userIdOfFriend)
+    public void addFriend(string userIdOfFriend, Action successAction)
     {
         var request = new AddFriendRequest()
         {
             FriendPlayFabId = userIdOfFriend
         };
 
-        PlayFabClientAPI.AddFriend(request, (result) =>
-        {
-            Debug.Log("Successfully added friend: " + userIdOfFriend);
-        }, (error) => LogError(error, "AddFriend"));          
+        PlayFabClientAPI.AddFriend(request, 
+            (result) =>
+            {
+                successAction.Invoke();
+            }
+            , (error) => LogError(error, "AddFriend"));          
     }
 
     void Awake()
@@ -111,31 +115,48 @@ class NetworkManager : MonoBehaviour
 
     public void searchFriends(string searchString, Action<IEnumerable<ButtonAddFriendContent>> populateResults)
     {
-        // Search all 4 fields 
-        var userNameRequest = new GetAccountInfoRequest() { Username = searchString };
-        var emailRequest = new GetAccountInfoRequest() { Email = searchString };
-        var idRequest = new GetAccountInfoRequest() { PlayFabId = searchString };
-        var displayNameRequest = new GetAccountInfoRequest() { TitleDisplayName = searchString };
-
-        PlayFabClientAPI.GetAccountInfo(userNameRequest, (result) =>
+        // Get current friends first, so we don't show people you're already friends with
+        PlayFabClientAPI.GetFriendsList(new GetFriendsListRequest(), (getFriendsListResult) =>
         {
-            populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
-        }, (error) => LogError(error, "GetAccountInfo(userNameRequest"));
+            // Search all 4 fields 
+            var userNameRequest = new GetAccountInfoRequest() { Username = searchString };
+            var emailRequest = new GetAccountInfoRequest() { Email = searchString };
+            var idRequest = new GetAccountInfoRequest() { PlayFabId = searchString };
+            var displayNameRequest = new GetAccountInfoRequest() { TitleDisplayName = searchString };
 
-        PlayFabClientAPI.GetAccountInfo(emailRequest, (result) =>
-        {
-            populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
-        }, (error) => LogError(error, "GetAccountInfo(emailRequest"));
+            PlayFabClientAPI.GetAccountInfo(userNameRequest, (result) =>
+            {
+                if (!getFriendsListResult.Friends.Select(f => f.FriendPlayFabId).Contains(result.AccountInfo.PlayFabId))
+                {
+                    populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
+                }
+            }, (error) => LogError(error, "GetAccountInfo(userNameRequest"));
 
-        PlayFabClientAPI.GetAccountInfo(idRequest, (result) =>
-        {
-            populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
-        }, (error) => LogError(error, "GetAccountInfo(idRequest"));
+            PlayFabClientAPI.GetAccountInfo(emailRequest, (result) =>
+            {
+                if (!getFriendsListResult.Friends.Select(f => f.FriendPlayFabId).Contains(result.AccountInfo.PlayFabId))
+                {
+                    populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
+                }
+            }, (error) => LogError(error, "GetAccountInfo(emailRequest"));
 
-        PlayFabClientAPI.GetAccountInfo(displayNameRequest, (result) =>
-        {
-            populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
-        }, (error) => LogError(error, "GetAccountInfo(displayNameRequest"));
+            PlayFabClientAPI.GetAccountInfo(idRequest, (result) =>
+            {
+                if (!getFriendsListResult.Friends.Select(f => f.FriendPlayFabId).Contains(result.AccountInfo.PlayFabId))
+                {
+                    populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
+                }
+            }, (error) => LogError(error, "GetAccountInfo(idRequest"));
+
+            PlayFabClientAPI.GetAccountInfo(displayNameRequest, (result) =>
+            {
+                if (!getFriendsListResult.Friends.Select(f => f.FriendPlayFabId).Contains(result.AccountInfo.PlayFabId))
+                {
+                    populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
+                }
+            }, (error) => LogError(error, "GetAccountInfo(displayNameRequest"));
+
+        }, (error) => LogError(error, "GetFriendsList"));              
     }
 
     private string getGroupId(string friendId)
@@ -335,7 +356,6 @@ class NetworkManager : MonoBehaviour
     private void LogError(PlayFabError error, string location = "")
     {
         Debug.Log(location + " PlayFab Error: " + error.ErrorMessage + " Details: " + error.ErrorDetails);
-        throw new Exception(location + " PlayFab Error: " + error.ErrorMessage + " Details: " + error.ErrorDetails);
     }
     
     class CallInfo
