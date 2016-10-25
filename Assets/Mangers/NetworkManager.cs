@@ -72,10 +72,6 @@ class NetworkManager : MonoBehaviour
         }
 
         PlayFabLoginThisDevice();
-    }    
-
-    void Start()
-    {
     }
 
     void Update()
@@ -86,41 +82,20 @@ class NetworkManager : MonoBehaviour
         }
     }
 
-    public void SaveLevelDefinitionToServer()
+    public void SaveLevelDefinitionToServer(LevelDefinition levelDefToSave)
     {
-        //currentMatch["isPlayerLeftTurn"] = levelDef.IsPlayerLeftTurn;
-        //currentMatch["playerDistanceFromCenter"] = levelDef.PlayerDistanceFromCenter;
-        //currentMatch["playerLeftHealth"] = levelDef.PlayerLeftHealth;
-        //currentMatch["playerRightHealth"] = levelDef.PlayerRightHealth;
-        //currentMatch["wallHeight"] = levelDef.WallHeight;
-        //currentMatch["wallPosition"] = levelDef.WallPosition;
-        //currentMatch["gameState"] = levelDef.gameState.ToString();
-        //currentMatch["gameType"] = levelDef.gameType.ToString();
+        UpdateSharedGroupDataRequest updateDataRequest = new UpdateSharedGroupDataRequest()
+        {
+            Data = new Dictionary<string, string>() { { "LevelDefinition", JsonConvert.SerializeObject(levelDefToSave).ToString() } },
+            SharedGroupId = getGroupId(CurrentUser.UserId == levelDefToSave.PlayerLeftId ? levelDefToSave.PlayerRightId : levelDefToSave.PlayerLeftId)
+        };
 
-        //currentMatch["LastShotStartX"] = levelDef.LastShotStartX;
-        //currentMatch["LastShotStartY"] = levelDef.LastShotStartY;
-        //currentMatch["LastShotEndX"] = levelDef.LastShotEndX;
-        //currentMatch["LastShotEndtY"] = levelDef.LastShotEndY;
-
-        //currentMatch["RebuttalTextEnabled"] = levelDef.RebuttalTextEnabled;
-
-        //currentMatch["ShotArrows"] = JsonConvert.SerializeObject(
-        //    levelDef.ShotArrows,
-        //    Formatting.Indented,
-        //    new JsonSerializerSettings
-        //    {
-        //        ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-        //    }
-        //);
-
-        //currentMatch.SaveAsync().ContinueWith(t =>
-        //{
-        //    Debug.Log("Canceled: " + t.IsCanceled);
-        //    Debug.Log("IsCompleted: " + t.IsCompleted);
-        //    Debug.Log("IsFaulted: " + t.IsFaulted);
-        //    Debug.Log("Exception: " + t.Exception.ToString());
-        //    Debug.Log("InnerException: " + t.Exception.InnerException.ToString());
-        //});
+        PlayFabClientAPI.UpdateSharedGroupData(updateDataRequest,
+            (result) =>
+            {
+                Debug.Log("Success: UpdateSharedGroupData");
+            }, (error) => LogError(error, "UpdateSharedGroupData")
+        );
     }
 
     public void loadFriends(Action<string, string> loadFriends)
