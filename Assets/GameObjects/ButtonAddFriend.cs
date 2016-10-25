@@ -36,16 +36,3 @@ public class ButtonAddFriend : MonoBehaviour
         });
     }
 }
-
-public class ButtonAddFriendContent
-{
-    public Image iconOfFriend;
-    public string userIdOfFriend;
-    public string usernameOfFriend;
-
-    public ButtonAddFriendContent(string userId, string username)
-    {
-        userIdOfFriend = userId;
-        usernameOfFriend = username;
-    }
-}

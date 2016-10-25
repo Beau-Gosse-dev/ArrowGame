@@ -106,14 +106,17 @@ class NetworkManager : MonoBehaviour
     {
         PlayFabClientAPI.GetFriendsList(new GetFriendsListRequest(), (result) =>
         {
-            foreach (var friend in result.Friends)
+            foreach (var currFriend in result.Friends)
             {
+                // Need to copy object so that a new object gets passed to each lambda. Otherwise all lambdas will use the last value
+                // https://blogs.msdn.microsoft.com/ericlippert/2009/11/12/closing-over-the-loop-variable-considered-harmful/
+                var friend = currFriend;
                 CallOnMainThread(() => loadFriends(friend.Username, friend.FriendPlayFabId));
             }
         }, (error) => LogError(error, "GetFriendsList"));
     }
 
-    public void searchFriends(string searchString, Action<IEnumerable<ButtonAddFriendContent>> populateResults)
+    public void searchFriends(string searchString, Action<IEnumerable<GameUser>> populateResults)
     {
         // Get current friends first, so we don't show people you're already friends with
         PlayFabClientAPI.GetFriendsList(new GetFriendsListRequest(), (getFriendsListResult) =>
@@ -128,7 +131,7 @@ class NetworkManager : MonoBehaviour
             {
                 if (!getFriendsListResult.Friends.Select(f => f.FriendPlayFabId).Contains(result.AccountInfo.PlayFabId))
                 {
-                    populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
+                    populateResults(new List<GameUser>() { new GameUser(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
                 }
             }, (error) => LogError(error, "GetAccountInfo(userNameRequest"));
 
@@ -136,7 +139,7 @@ class NetworkManager : MonoBehaviour
             {
                 if (!getFriendsListResult.Friends.Select(f => f.FriendPlayFabId).Contains(result.AccountInfo.PlayFabId))
                 {
-                    populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
+                    populateResults(new List<GameUser>() { new GameUser(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
                 }
             }, (error) => LogError(error, "GetAccountInfo(emailRequest"));
 
@@ -144,7 +147,7 @@ class NetworkManager : MonoBehaviour
             {
                 if (!getFriendsListResult.Friends.Select(f => f.FriendPlayFabId).Contains(result.AccountInfo.PlayFabId))
                 {
-                    populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
+                    populateResults(new List<GameUser>() { new GameUser(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
                 }
             }, (error) => LogError(error, "GetAccountInfo(idRequest"));
 
@@ -152,7 +155,7 @@ class NetworkManager : MonoBehaviour
             {
                 if (!getFriendsListResult.Friends.Select(f => f.FriendPlayFabId).Contains(result.AccountInfo.PlayFabId))
                 {
-                    populateResults(new List<ButtonAddFriendContent>() { new ButtonAddFriendContent(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
+                    populateResults(new List<GameUser>() { new GameUser(result.AccountInfo.PlayFabId, result.AccountInfo.Username) });
                 }
             }, (error) => LogError(error, "GetAccountInfo(displayNameRequest"));
 

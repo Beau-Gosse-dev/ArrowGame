@@ -2,6 +2,7 @@
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
+using Assets.Networking;
 
 public class FriendSearch : MonoBehaviour {
     
@@ -44,24 +45,24 @@ public class FriendSearch : MonoBehaviour {
         {
             lock (lockObject)
             {
-                foreach (ButtonAddFriendContent user in users)
+                foreach (GameUser user in users)
                 {
-                    if (IdsAlreadyInList.Contains(user.userIdOfFriend))
+                    if (IdsAlreadyInList.Contains(user.UserId))
                     {
                         // This user was already returned by another means, e.g. username and now display name, so just return
                         return;
                     }
 
-                    Debug.Log("User: " + user.usernameOfFriend);
-                    IdsAlreadyInList.Add(user.userIdOfFriend);
+                    Debug.Log("User: " + user.UserName);
+                    IdsAlreadyInList.Add(user.UserId);
 
                     NetworkManager.CallOnMainThread(() =>
                     {
                         ButtonAddFriend newButton = Instantiate(buttonAddFriendPrefab);
                         newButton.iconOfFriend = null; // TODO get Facebook pictures
-                        newButton.button.GetComponentInChildren<Text>().text = "Add friend: " + user.usernameOfFriend;
-                        newButton.usernameOfFriend = user.usernameOfFriend;
-                        newButton.userIdOfFriend = user.userIdOfFriend;
+                        newButton.button.GetComponentInChildren<Text>().text = "Add friend: " + user.UserName;
+                        newButton.usernameOfFriend = user.UserName;
+                        newButton.userIdOfFriend = user.UserId;
                         newButton.button.onClick.AddListener(newButton.addFriend);
                         newButton.transform.SetParent(contentPanel);
                         newButton.transform.localScale = new Vector3(1, 1, 1);
