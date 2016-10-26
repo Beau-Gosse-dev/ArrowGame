@@ -22,7 +22,24 @@ public class ButtonCreateMatch : MonoBehaviour
 
     public void createMatch()
     {
-        _networkManager.createMatch(userIdOfFriend, usernameOfFriend);
+        button.enabled = false;
+        _networkManager.createMatch(userIdOfFriend, usernameOfFriend, () =>
+            {
+                // On success
+                transform.FindChild("Image");
+                var children = gameObject.GetComponentsInChildren(typeof(Image));
+                foreach (var child in children)
+                {
+                    if (child.name == "Image")
+                    {
+                        ((Image)child).color = new Color(0, 1, 0);
+                    }
+                }
+            }, () =>
+            {
+                // On Error
+                button.enabled = true;
+            });
     }
 }
 

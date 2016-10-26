@@ -169,7 +169,7 @@ class NetworkManager : MonoBehaviour
         return string.Concat(friendAndSelfId[0], '-', friendAndSelfId[1]);
     }
 
-    public void createMatch(string userIdOfFriend, string usernameOfFriend)
+    public void createMatch(string userIdOfFriend, string usernameOfFriend, Action onSuccess, Action onError)
     {
         var createGroupRequest = new CreateSharedGroupRequest()
         {
@@ -206,11 +206,15 @@ class NetworkManager : MonoBehaviour
                             (result) =>
                             {
                                 Debug.Log("Success: UpdateSharedGroupData");
-                            }, (error) => LogError(error, "UpdateSharedGroupData")
+                                onSuccess();
+                            }, (error) => {
+                                LogError(error, "UpdateSharedGroupData"); onError(); }
                         );
-                    }, (error) => LogError(error, "AddSharedGroupMembers")
+                    }, (error) => {
+                        LogError(error, "AddSharedGroupMembers"); onError(); }
                 );
-            }, (error) => LogError(error, "CreateSharedGroup")
+            }, (error) => {
+                LogError(error, "CreateSharedGroup"); onError(); }
         );
     }
 
@@ -313,6 +317,7 @@ class NetworkManager : MonoBehaviour
             PlayFabClientAPI.LinkCustomID(requestToLink, (linkResult) =>
             {
                 IsLoggedInWithUsernamePassword = true;
+                CurrentUser = new GameUser(result.PlayFabId, result.Username);
                 processSuccess();
             }, (error) => 
             {
