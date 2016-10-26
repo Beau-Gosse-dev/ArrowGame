@@ -19,15 +19,25 @@ public class CameraFollow : MonoBehaviour
     private float setToX = 0f;
     private float setToY = 5f;
     
+    void Awake()
+    {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+    }
 
     void Start()
     {
-        arrow.ResetPosition(LevelDefinition.IsPlayerLeftTurn);
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+        arrow.ResetPosition(_networkManager.levelDef.IsPlayerLeftTurn);
     }
 
     const float minSize = 1f;
     const float maxSize = 20f;
     const float sensitivity = 0.5f;
+    private NetworkManager _networkManager;
 
     void Update()
     {
@@ -79,7 +89,6 @@ public class CameraFollow : MonoBehaviour
         {
             transform.position = new Vector3(transform.position.x, 6.0f + Camera.main.orthographicSize - 7.0f, transform.position.z);
         }
-        Debug.Log(transform.position.y);
     }
 
     public void PauseInSeconds(float seconds)

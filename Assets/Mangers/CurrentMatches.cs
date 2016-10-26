@@ -1,104 +1,121 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
 using System.Collections.Generic;
-using Parse;
-using System.Threading.Tasks;
+using Assets.Networking;
+using UnityEngine.SceneManagement;
+using Assets.Mangers;
+using System;
 
 public class CurrentMatches : MonoBehaviour {
-
-    public Button createMatchButton;
+    
     public Text myUsername;
     public RectTransform matchPanelContent;
     public ButtonCurrentMatch buttonCurrentMatchPrefab;
-    public Button AddFriendButton;
     
-    private List<ButtonCurrentMatch> matchButtonList = new List<ButtonCurrentMatch>();
+    private NetworkManager _networkManager;
 
-    // Use this for initialization
-    void Start ()
+    void Awake()
     {
-        myUsername.text = ParseUser.CurrentUser.Username;
-        FindMatches();
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
     }
 
-    public void FindMatches()
+    void Start ()
+    {
+        myUsername.text = _networkManager.CurrentUser.UserName;
+        LoadMatchButtonsAsync();
+    }
+
+    public void LoadMatchButtonsAsync()
     {
         //
-        // Populate matche buttons where current player is left player or the right player
-        // 
-        ParseQuery<ParseObject> queryLeftPlayer = new ParseQuery<ParseObject>("MatchTest").WhereEqualTo("playerLeftId", ParseUser.CurrentUser.ObjectId);
-        ParseQuery<ParseObject> queryRightPlayer = new ParseQuery<ParseObject>("MatchTest").WhereEqualTo("playerRightId", ParseUser.CurrentUser.ObjectId);
-        ParseQuery<ParseObject> queryBothSides = queryLeftPlayer.Or(queryRightPlayer);
-        queryBothSides.FindAsync().ContinueWith(t =>
+        // Populate match buttons where current player is left player or the right player
+        //
+        _networkManager.GetMatches(match =>
         {
-            IEnumerable<ParseObject> results = t.Result;
-            foreach (ParseObject matchObject in results)
+            if (match != null)
             {
-                ParseObject matchParseObject = matchObject;
+                // Need to clone match because the async call overwrites the reference it seems. Need to research.
+                LevelDefinition clonedMatch = match.Clone();
 
-                NetworkManager.Call(() =>
-                {
-                    ButtonCurrentMatch newButton = Instantiate(buttonCurrentMatchPrefab);
-                    // If the current user is the match's left player, show the right player on the button (the opponent)
-                    string friendId;
-                    string friendName;
-                    if (matchParseObject.Get<string>("playerLeftId") == ParseUser.CurrentUser.ObjectId)
-                    {
-                        friendId = matchParseObject.Get<string>("playerRightId");
-                        friendName = matchParseObject.Get<string>("playerRightName");
-                    }
-                    else
-                    {
-                        friendId = matchParseObject.Get<string>("playerLeftId");
-                        friendName = matchParseObject.Get<string>("playerLeftName");
-                    }
-
-                    newButton.iconOfFriend = null; //todo
-                    newButton.button.GetComponentInChildren<Text>().text = "Match in Progress: " + friendName;
-                    newButton.usernameOfFriend = friendName;
-                    newButton.userIdOfFriend = friendId;
-                    newButton.matchId = matchParseObject.ObjectId;
-                    newButton.button.onClick.AddListener(newButton.LoadMatch);
-                    newButton.transform.SetParent(matchPanelContent);
-                    newButton.transform.localScale = new Vector3(1, 1, 1);
-                    newButton.playerLeftHealth = matchParseObject.Get<float>("playerLeftHealth");
-                    newButton.playerRightHealth = matchParseObject.Get<float>("playerRightHealth");
-                    IList<Slider> sliders = newButton.button.GetComponentsInChildren<Slider>();
-                    foreach (Slider slider in sliders)
-                    {
-                        if (slider.name == "LeftHealthSlider")
-                        {
-                            slider.value = newButton.playerLeftHealth;
-                        }
-                        else
-                        {
-                            slider.value = newButton.playerRightHealth;
-                        }
-                        // If the slider is at 0, remove the green "fill" image
-                        if (slider.value <= 0)
-                        {
-                            foreach (Image img in slider.GetComponentsInChildren<Image>())
-                            {
-                                if (img.name == "Fill")
-                                {
-                                    img.enabled = false;
-                                }
-                            }
-                        }
-                    }
-                });
+                NetworkManager.CallOnMainThread(() => AddMatchButton(clonedMatch));
             }
         });
     }
 
+    private void AddMatchButton(LevelDefinition match)
+    {
+        string friendName;
+        string friendId;
+        if (_networkManager.CurrentUser.UserId == match.PlayerLeftId)
+        {
+            friendName = match.PlayerRightName;
+            friendId = match.PlayerRightId;
+        }
+        else if(_networkManager.CurrentUser.UserId == match.PlayerLeftId)
+        {
+            friendName = match.PlayerLeftName;
+            friendId = match.PlayerLeftId;
+        }
+        else
+        {
+            return;
+            //throw new Exception("Loading match where current user isn't a player!");
+        }
+
+        ButtonCurrentMatch newButton = Instantiate(buttonCurrentMatchPrefab);
+        newButton.iconOfFriend = null; // TODO: Add icon from Facebook or something
+        newButton.button.GetComponentInChildren<Text>().text = "Match in Progress: " + friendName;
+        newButton.usernameOfFriend = friendName;
+        newButton.userIdOfFriend = friendName;
+        //newButton.matchId = _networkManager.getgr;
+        newButton.levelDefinition = match;
+        newButton.button.onClick.AddListener(newButton.LoadMatch);
+        newButton.transform.SetParent(matchPanelContent);
+        newButton.transform.localScale = new Vector3(1, 1, 1);
+        newButton.playerLeftHealth = match.PlayerLeftHealth;
+        newButton.playerRightHealth = match.PlayerRightHealth;
+        loadHealthSliders(newButton);
+    }
+
+    private void loadHealthSliders(ButtonCurrentMatch newButton)
+    {
+        IList<Slider> sliders = newButton.button.GetComponentsInChildren<Slider>();
+        foreach (Slider slider in sliders)
+        {
+            if (slider.name == "LeftHealthSlider")
+            {
+                slider.value = newButton.playerLeftHealth;
+            }
+            else
+            {
+                slider.value = newButton.playerRightHealth;
+            }
+
+            // If the slider is at 0, remove the green "fill" image
+            if (slider.value <= 0)
+            {
+                foreach (Image img in slider.GetComponentsInChildren<Image>())
+                {
+                    if (img.name == "Fill")
+                    {
+                        img.enabled = false;
+                    }
+                }
+            }
+        }
+    }
+
     public void loadFriendSeach()
     {
-        Application.LoadLevel("FriendSearch");
+        SceneManager.LoadScene("FriendSearch");
     }
 
     public void loadCreateMatch()
     {
-        Application.LoadLevel("CreateMatch");
+        SceneManager.LoadScene("CreateMatch");
     }
 }

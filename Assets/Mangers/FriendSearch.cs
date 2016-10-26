@@ -1,9 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
-using Parse;
+using UnityEngine.SceneManagement;
 using System.Collections.Generic;
-using System;
+using Assets.Networking;
 
 public class FriendSearch : MonoBehaviour {
     
@@ -13,50 +12,63 @@ public class FriendSearch : MonoBehaviour {
     public Text myUsername;
     public Transform contentPanel;
     public ButtonAddFriend buttonAddFriendPrefab;
+    private NetworkManager _networkManager;
+
+    private List<string> IdsAlreadyInList;
+    private Object lockObject = new Object();
+
+    void Awake()
+    {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+    }
     
-    // Use this for initialization
     void Start ()
     {
-        myUsername.text = ParseUser.CurrentUser.Username;
+        myUsername.text = _networkManager.CurrentUser.UserName;
+        IdsAlreadyInList = new List<string>();
     }
 
     public void GoToCreateMatch()
     {
-        Application.LoadLevel("CreateMatch");
+        SceneManager.LoadScene("CreateMatch");
     }
 
     public void SearchUser ()
     {
         string searchString = UserNameField.text;
 
-        ParseUser.Query
-            .WhereStartsWith("username", searchString)
-            .WhereNotEqualTo("objectId", ParseUser.CurrentUser.ObjectId) // Don't search for yourself
-            .FindAsync().ContinueWith(t =>
+        _networkManager.searchFriends(searchString, users =>
+        {
+            lock (lockObject)
             {
-                IEnumerable<ParseUser> users = t.Result;
-                foreach (ParseUser user in users)
+                foreach (GameUser user in users)
                 {
-                    ParseUser userForLambda = user;
-                    Debug.Log("User" + user.Username);
-                    NetworkManager.Call(() =>
+                    if (IdsAlreadyInList.Contains(user.UserId))
+                    {
+                        // This user was already returned by another means, e.g. username and now display name, so just return
+                        return;
+                    }
+
+                    Debug.Log("User: " + user.UserName);
+                    IdsAlreadyInList.Add(user.UserId);
+
+                    NetworkManager.CallOnMainThread(() =>
                     {
                         ButtonAddFriend newButton = Instantiate(buttonAddFriendPrefab);
-                        newButton.iconOfFriend = null; // Todo get facebook pictures
-                        newButton.button.GetComponentInChildren<Text>().text = userForLambda.Username;
-                        newButton.usernameOfFriend = userForLambda.Username;
-                        newButton.userIdOfFriend = userForLambda.ObjectId;
+                        newButton.iconOfFriend = null; // TODO get Facebook pictures
+                        newButton.button.GetComponentInChildren<Text>().text = "Add friend: " + user.UserName;
+                        newButton.usernameOfFriend = user.UserName;
+                        newButton.userIdOfFriend = user.UserId;
                         newButton.button.onClick.AddListener(newButton.addFriend);
                         newButton.transform.SetParent(contentPanel);
                         newButton.transform.localScale = new Vector3(1, 1, 1);
                     });
                 }
-            });
-    }
-
-    public static void addFriend(string userId)
-    {
-        ParseUser.CurrentUser.AddUniqueToList("friends", userId);
-        ParseUser.CurrentUser.SaveAsync();
+            }
+        });
     }
 }

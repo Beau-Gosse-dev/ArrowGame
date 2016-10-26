@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
-
+using Assets.Mangers;
 
 public class AimLineOld : MonoBehaviour
 {
@@ -17,9 +17,19 @@ public class AimLineOld : MonoBehaviour
     public Canvas worldCanvas;
 
     public bool IsShooting = false; // The arrow is moving through the air
+    private NetworkManager _networkManager;
 
 
     // private Vector3 computerAim = new Vector3(6f, 4f, -.05f);
+
+    void Awake()
+    {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+    }
 
     void Start()
     {
@@ -38,7 +48,7 @@ public class AimLineOld : MonoBehaviour
         // Left Player
         //if (IsLeftPlayerTurn && !IsShooting)
         // Only allow dragging when the camera is not paused and on it's target(not moving) and we aren't shooting. Also when game state is playing.
-        if (!IsShooting && !cameraFollow.Paused && !cameraFollow.IsMoving() && LevelDefinition.gameState == GameState.Playing)
+        if (!IsShooting && !cameraFollow.Paused && !cameraFollow.IsMoving() && _networkManager.levelDef.gameState == GameState.Playing)
         {
             if (Input.GetMouseButton(0))
             {
@@ -93,7 +103,7 @@ public class AimLineOld : MonoBehaviour
                 {
                     activeArrow.Shoot(startPoint, endPoint);
                     IsShooting = true;
-                    LevelDefinition.IsPlayerLeftTurn = !LevelDefinition.IsPlayerLeftTurn;
+                    _networkManager.levelDef.IsPlayerLeftTurn = !_networkManager.levelDef.IsPlayerLeftTurn;
                     IsValidShot = false;
                 }
                 this.setLine(startPoint, endPoint);

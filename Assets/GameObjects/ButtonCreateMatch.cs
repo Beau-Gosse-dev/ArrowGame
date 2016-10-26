@@ -1,9 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
-using Parse;
-using System.Threading.Tasks;
-using Assets.Managers;
 
 public class ButtonCreateMatch : MonoBehaviour
 {
@@ -13,19 +9,37 @@ public class ButtonCreateMatch : MonoBehaviour
     public string usernameOfFriend;
     public CreateMatch createMatchObject;
 
+    private NetworkManager _networkManager;
+
+    void Awake()
+    {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+    }
+
     public void createMatch()
     {
-        LevelDefinition.LevelDefinitionSetDefault();
-        ParseObject matchParseObject = LevelDefinition.getParseObject(
-            ParseUser.CurrentUser.ObjectId, 
-            ParseUser.CurrentUser.Username, 
-            userIdOfFriend, 
-            usernameOfFriend
-            );
-
-        matchParseObject.SaveAsync().ContinueWith(t =>
-        {
-        });
+        button.enabled = false;
+        _networkManager.createMatch(userIdOfFriend, usernameOfFriend, () =>
+            {
+                // On success
+                transform.FindChild("Image");
+                var children = gameObject.GetComponentsInChildren(typeof(Image));
+                foreach (var child in children)
+                {
+                    if (child.name == "Image")
+                    {
+                        ((Image)child).color = new Color(0, 1, 0);
+                    }
+                }
+            }, () =>
+            {
+                // On Error
+                button.enabled = true;
+            });
     }
 }
 

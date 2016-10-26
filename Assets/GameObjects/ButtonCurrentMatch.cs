@@ -1,9 +1,6 @@
-﻿using UnityEngine;
+﻿using Assets.Mangers;
+using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
-using Parse;
-using System.Threading.Tasks;
-using Assets.Managers;
 
 public class ButtonCurrentMatch : MonoBehaviour
 {
@@ -11,21 +8,25 @@ public class ButtonCurrentMatch : MonoBehaviour
     public Image iconOfFriend;
     public string userIdOfFriend;
     public string usernameOfFriend;
-    public string matchId;
+    public LevelDefinition levelDefinition;
     public float playerLeftHealth;
     public float playerRightHealth;
-    
+
+
+    private NetworkManager _networkManager;
+
+    void Awake()
+    {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+    }
+
     public void LoadMatch()
     {
-        ParseQuery<ParseObject> query = ParseObject.GetQuery("MatchTest");
-        query.GetAsync(this.matchId).ContinueWith(t =>
-        {
-            ParseObject match = t.Result;
-            NetworkManager.Call(() =>
-            {
-                LevelDefinition.initializeFromParseObject(match);
-            });
-        });
+        _networkManager.loadMatch(levelDefinition);
     }
 }
 

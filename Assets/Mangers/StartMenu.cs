@@ -1,7 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
-using Parse;
+using UnityEngine.SceneManagement;
+using Assets.Mangers;
+using Assets.Networking;
 
 public class StartMenu : MonoBehaviour
 {
@@ -9,42 +10,48 @@ public class StartMenu : MonoBehaviour
     public Button playComputerButton;
     public Button playFriendButton;
     public Button settingsButton;
+    private NetworkManager _networkManager;
 
-	// Use this for initialization
-	void Start ()
+    void Awake()
     {
-        //playHumanButton = GetComponent<Button>();
-        //playComputerButton = GetComponent<Button>();
-        //playFriendButton = GetComponent<Button>();
-        //settingsButton = GetComponent<Button>();
-    } // End Start
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+    }
+
+    void Start ()
+    {
+    }
 
     public void onHumanClicked()
     {
-        LevelDefinition.gameType = GameType.Local;
-        Application.LoadLevel("Human");
-    } // End onHumanClicked    
+        _networkManager.levelDef.gameType = GameType.Local;
+        SceneManager.LoadScene("Human");
+    }
+
     public void onComputerClicked(){
-        LevelDefinition.LevelDefinitionSetDefault();
-        LevelDefinition.gameType = GameType.Computer;
-        LevelDefinition.WallPosition = -1;
-        Application.LoadLevel("Computer");
-    } // End onHumanClicked
+        _networkManager.levelDef.LevelDefinitionSetDefault();
+        _networkManager.levelDef.gameType = GameType.Computer;
+        _networkManager.levelDef.WallPosition = -1;
+        SceneManager.LoadScene("Computer");
+    }
 
     public void onSettingsClicked()
     {
-        Application.LoadLevel("Settings");
-    } // End onSettingsClicked
+        SceneManager.LoadScene("Settings");
+    }
 
     public void onFriendClicked()
     {
-        if(ParseUser.CurrentUser != null)
+        if(_networkManager.IsLoggedInWithUsernamePassword)
         {
-            Application.LoadLevel("CurrentMatches");
+            SceneManager.LoadScene("CurrentMatches");
         }
         else
         {
-            Application.LoadLevel("CreateAccount");
+            SceneManager.LoadScene("CreateAccount");
         }
-    } // End onFriendClicked
+    }
 }

@@ -1,26 +1,33 @@
 ﻿using UnityEngine;
-using System.Collections;
-using System;
 using System.Collections.Generic;
+using Assets.Mangers;
+using Assets.GameObjects;
 
 public class Arrow : MonoBehaviour
 {
     Rigidbody2D arrow;
-    public AimLine aimLine;
+    public AimLineFriend aimLine;
     public Transform playerLeftTransform;
     public Transform playerRightTransform;
     public Player playerLeft;
     public Player playerRight;
     private const float arrowPlayerXOffset = 1.7f;
     private const float arrowPlayerYOffset = .5f;
-    public CameraFollow cameraFollow;
+    public CameraFollowFriend cameraFollow;
     public List<Arrow> arrowsShot = new List<Arrow>();
 
     private const int BodyDamageAmount = 55;
     private const int HeadDamageAmount = 100;
+    private NetworkManager _networkManager;
+
     void Awake()
     {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
         arrow = gameObject.GetComponent<Rigidbody2D>();
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
     }
     // Use this for initialization
     void Start()
@@ -63,7 +70,7 @@ public class Arrow : MonoBehaviour
         if (!arrow.isKinematic)
         {
             #region gameTypeComputer
-            if (LevelDefinition.gameType == GameType.Computer)
+            if (_networkManager.levelDef.gameType == GameType.Computer)
             {
                 // Tell the aim line where it hit, so if it was the computer's turn, it can update it's aim
                 aimLine.ArrowCollision(transform.position.x, transform.position.y, col.gameObject.name.StartsWith("Brick"), this.GetComponent<Rigidbody2D>().transform.rotation);
@@ -80,7 +87,7 @@ public class Arrow : MonoBehaviour
                 // Save the new arrow to our array of gameObjects (so we can destroy them)
                 arrowsShot.Add(newArrowObject);
                 // Save the new arrow to the level definition to save to the server
-                LevelDefinition.ShotArrows.Add(
+                _networkManager.levelDef.ShotArrows.Add(
                     new ShotArrow(newArrowObject.GetComponent<Rigidbody2D>().rotation, newArrowObject.transform.position.x, newArrowObject.transform.position.y)
                     );
 
@@ -111,14 +118,14 @@ public class Arrow : MonoBehaviour
                         playerRight.Hit(BodyDamageAmount);
                     }
                 }
-                else if (LevelDefinition.RebuttleTextEnabled) // A body part wasn't hit, so if we were in rebuttal, right lost
+                else if (_networkManager.levelDef.RebuttalTextEnabled) // A body part wasn't hit, so if we were in rebuttal, right lost
                 {
-                    // If the rebuttal wasn't successful, just kill right player, he will handle removing the rebuttle text and logging.
+                    // If the rebuttal wasn't successful, just kill right player, he will handle removing the rebuttal text and logging.
                     playerRight.Hit(100);
                 }
 
                 // Reset the arrow location on hit
-                ResetPosition(LevelDefinition.IsPlayerLeftTurn);
+                ResetPosition(_networkManager.levelDef.IsPlayerLeftTurn);
 
                 // Allow another shot
                 aimLine.ArrowHit(col);
@@ -126,13 +133,13 @@ public class Arrow : MonoBehaviour
             } // End If Computer
             #endregion gameTypeComputer
             #region gameTypeHuman
-            else if(LevelDefinition.gameState == GameState.ShowLastMove)
+            else if(_networkManager.levelDef.gameState == GameState.ShowLastMove)
             {
                 // Since this is just showing the last shot, don't add a new arrow.                
                 // Reset the arrow location on hit
-                ResetPosition(!LevelDefinition.IsPlayerLeftTurn);
+                ResetPosition(!_networkManager.levelDef.IsPlayerLeftTurn);
 
-                LevelDefinition.gameState = GameState.Playing;
+                _networkManager.levelDef.gameState = GameState.Playing;
 
                 // Allow another shot
                 aimLine.ArrowHit(col);
@@ -151,7 +158,7 @@ public class Arrow : MonoBehaviour
                 // Save the new arrow to our array of gameObjects (so we can destroy them)
                 arrowsShot.Add(newArrowObject);
                 // Save the new arrow to the level definition to save to the server
-                LevelDefinition.ShotArrows.Add(
+                _networkManager.levelDef.ShotArrows.Add(
                     new ShotArrow(newArrowObject.GetComponent<Rigidbody2D>().rotation, newArrowObject.transform.position.x, newArrowObject.transform.position.y)
                     );
 
@@ -177,20 +184,20 @@ public class Arrow : MonoBehaviour
                         playerRight.Hit(BodyDamageAmount);
                     }
                 }
-                else if (LevelDefinition.RebuttleTextEnabled) // A body part wasn't hit, so if we were in rebuttal, right lost
+                else if (_networkManager.levelDef.RebuttalTextEnabled) // A body part wasn't hit, so if we were in rebuttal, right lost
                 {
-                    // If the rebuttal wasn't successful, just kill right player, he will handle removing the rebuttle text and logging.
+                    // If the rebuttal wasn't successful, just kill right player, he will handle removing the rebuttal text and logging.
                     playerRight.Hit(100);
                 }
 
                 // Reset the arrow location on hit
-                ResetPosition(LevelDefinition.IsPlayerLeftTurn);
+                ResetPosition(_networkManager.levelDef.IsPlayerLeftTurn);
 
                 // Allow another shot
                 aimLine.ArrowHit(col);
 
-                // Upload the new state to Parse so when the next player comes they can play now.
-                LevelDefinition.saveCurrentToServer();
+                // Upload the new state to the server so when the next player comes they can play now.
+                _networkManager.SaveLevelDefinitionToServer(_networkManager.levelDef);
             }
 
             #endregion gameTypeHuman
@@ -220,7 +227,7 @@ public class Arrow : MonoBehaviour
         arrow.velocity = new Vector2(0f, 0f);
         arrow.angularVelocity = 0f;
         arrow.gravityScale = 0;
-        if ((IsPlayerLeftTurn && LevelDefinition.gameState!=GameState.ShowLastMove) || (!IsPlayerLeftTurn && LevelDefinition.gameState == GameState.ShowLastMove))
+        if ((IsPlayerLeftTurn && _networkManager.levelDef.gameState!=GameState.ShowLastMove) || (!IsPlayerLeftTurn && _networkManager.levelDef.gameState == GameState.ShowLastMove))
         {
             arrow.rotation = 0;
             arrow.transform.position = new Vector2(playerLeftTransform.position.x + arrowPlayerXOffset, playerLeftTransform.position.y + arrowPlayerYOffset);

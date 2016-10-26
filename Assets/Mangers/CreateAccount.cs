@@ -1,32 +1,34 @@
 ﻿using UnityEngine;
-using System.Collections;
 using UnityEngine.UI;
-using Assets.Managers;
-using Parse;
-using System.Threading.Tasks;
-using System;
-using Facebook.Unity;
-using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 public class CreateAccount : MonoBehaviour
 {
-    public Button FacebookSignInButton;
     public Button SignInButton;
     public Button SignUpButton;
     public InputField UserNameField;
     public InputField PasswordField;
     public Text ErrorText;
+    private NetworkManager _networkManager;
 
     // Use this for initialization
+    void Awake()
+    {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+    }
+
     void Start ()
     {
-        FacebookSignInButton.onClick.AddListener(FacebookSignInButtonBehavior);
-        SignInButton.onClick.AddListener(TestSignInButtonBehavior);
-        SignUpButton.onClick.AddListener(TestSignUpButtonBehavior);
+        SignInButton.onClick.AddListener(SignInButtonBehavior);
+        SignUpButton.onClick.AddListener(SignUpButtonBehavior);
 
         ErrorText.enabled = false;
     }
-	
+
 	// Update is called once per frame
 	void Update ()
     {
@@ -35,144 +37,48 @@ public class CreateAccount : MonoBehaviour
             LevelManager.quitPlaying();
         }
     }
-    public void FacebookSignInButtonBehavior()
+
+    public void SignUpButtonBehavior()
     {
-        // If the user is already logged in with a username, try to link to facebook.
-        // TODO: if the user is already logged into facebook also, do a check (we probably shouldn't even show this button)
-
-        // Use the Facebook sdk to log in with Facebook credentials
-
-
-        List<string> facebookPermissions = new List<string>();
-        facebookPermissions.Add("public_profile");
-        if (!FB.IsInitialized)
-        {
-            FB.Init(() =>
+        _networkManager.signUpAsync(UserNameField.text, PasswordField.text, 
+            () =>
             {
-                FB.LogInWithReadPermissions(facebookPermissions, FacebookLoginCallback);
+                NetworkManager.CallOnMainThread(HideErrorText);
+                NetworkManager.CallOnMainThread(LoadCreateMatch);
+            }, 
+            (string errorMessage) =>
+            {
+                NetworkManager.CallOnMainThread(ShowErrorText, errorMessage);
             });
-        }
-        else
-        {
-            FB.LogInWithReadPermissions(facebookPermissions, FacebookLoginCallback);
-        }
     }
 
-    // Attch the Facebook Login token to our Cognito Identity.
-    private void FacebookLoginCallback(ILoginResult result)
+    public void SignInButtonBehavior()
     {
-        if (result.Error != null || !FB.IsLoggedIn)
+        _networkManager.signInAsync(UserNameField.text, PasswordField.text, () =>
         {
-            Debug.LogError(result.Error);
-        }
-        else
+            NetworkManager.CallOnMainThread(HideErrorText);
+            NetworkManager.CallOnMainThread(LoadCreateMatch);
+        }, (string errorMessage) => 
         {
-
-            //FB.API("/me?fields=first_name", HttpMethod.GET, LoginCallback2);
-            if (ParseUser.CurrentUser != null)
-            {
-                Task<ParseUser> logInTask = ParseFacebookUtils.LogInAsync(result.AccessToken.UserId, result.AccessToken.TokenString, result.AccessToken.ExpirationTime);
-            }
-            else
-            {
-                if (!ParseFacebookUtils.IsLinked(ParseUser.CurrentUser))
-                {
-                    Task linkTask = ParseFacebookUtils.LinkAsync(ParseUser.CurrentUser, result.AccessToken.UserId, result.AccessToken.TokenString, result.AccessToken.ExpirationTime);
-                }
-            }
-
-            // Login was successful.
-            Debug.Log("Sign up success");
-            NetworkManager.Call(HideErrorText);
-            NetworkManager.Call(LoadCreateMatch);
-        }
-    }
-
-    public void TestSignUpButtonBehavior()
-    {
-        ParseUser user = new ParseUser()
-        {
-            Username = UserNameField.text,
-            Password = PasswordField.text
-            //,Email = null
-        };
-
-        // other fields can be set just like with ParseObject
-        //user["phone"] = "650-555-0000";
-       
-        user.SignUpAsync().ContinueWith(t =>
-        {
-            if (t.IsCanceled)
-            {
-                Debug.Log("Canceled Sign Up");
-            }
-            if (t.IsFaulted)
-            {
-                Debug.Log("Sign up faulted");
-
-                foreach (var ex in t.Exception.InnerExceptions)
-                {
-                    ParseException parseException = (ParseException)ex;
-                    Debug.Log("Error message " + parseException.Message);
-                    Debug.Log("Error code: " + parseException.Code);
-                    NetworkManager.Call(ShowErrorText, ex.Message);
-                }
-            }
-            else
-            {
-                // Login was successful.
-                Debug.Log("Sign up success");
-                NetworkManager.Call(HideErrorText);
-                NetworkManager.Call(LoadCreateMatch);
-            }
-        });
-    }
-
-    public void TestSignInButtonBehavior()
-    {
-        // TODO save actual username as lowercase so that we don't have dups, but also save display name with cases.
-        ParseUser.LogInAsync(UserNameField.text, PasswordField.text).ContinueWith(t =>
-        {
-            if (t.IsCanceled)
-            {
-                Debug.Log("Canceled Sign In");
-            }
-            if (t.IsFaulted)
-            {
-                Debug.Log("Sign in faulted");
-                foreach (var ex in t.Exception.InnerExceptions)
-                {
-                    ParseException parseException = (ParseException)ex;
-                    Debug.Log("Error message " + parseException.Message);
-                    Debug.Log("Error code: " + parseException.Code);
-                    NetworkManager.Call(ShowErrorText, parseException.Message);
-                }
-            }
-            else
-            {
-                // Login was successful.
-                Debug.Log("Sign in success");
-                NetworkManager.Call(HideErrorText);
-                NetworkManager.Call(LoadCreateMatch);
-            }
+            NetworkManager.CallOnMainThread(ShowErrorText, errorMessage);
         });
     }
 
     private void LoadFriendSearch()
     {
-        Application.LoadLevel("FriendSearch");
+        SceneManager.LoadScene("FriendSearch");
     }
 
     private void LoadCreateMatch()
     {
-        Application.LoadLevel("CreateMatch");
+        SceneManager.LoadScene("CreateMatch");
     }
 
     public void ShowErrorText(object error)
     {
-        Debug.Log("SHowErrorText");
+        Debug.Log("ShowErrorText: " + (string)error);
         ErrorText.enabled = true;
-        ErrorText.text = (String)error;
+        ErrorText.text = (string)error;
     }
     private void HideErrorText()
     {

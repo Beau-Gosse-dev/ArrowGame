@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System;
-using Parse;
+using Assets.Mangers;
 
 public class AimLine : MonoBehaviour
 {
@@ -21,8 +20,18 @@ public class AimLine : MonoBehaviour
     public bool IsShooting = false; // The arrow is moving through the air
     private Vector3 computerAimPoint; // Where we will tell the computer to shoot (including randomness)
     private Vector3 computerAimPointWithoutRandomness; // Where the computer needs to drag to to shoot
+    private NetworkManager _networkManager;
 
     // private Vector3 computerAim = new Vector3(6f, 4f, -.05f);
+    
+    void Awake()
+    {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+    }
 
     void Start()
     {
@@ -36,13 +45,15 @@ public class AimLine : MonoBehaviour
 
     public void SetupMatch()
     {
-        if (LevelDefinition.gameState == GameState.ShowLastMove)
+        lineRender = gameObject.GetComponent<LineRenderer>();
+
+        if (_networkManager.levelDef.gameState == GameState.ShowLastMove)
         {
-            startPoint.x = LevelDefinition.LastShotStartX;
-            startPoint.y = LevelDefinition.LastShotStartY;
+            startPoint.x = _networkManager.levelDef.LastShotStartX;
+            startPoint.y = _networkManager.levelDef.LastShotStartY;
             endPoint = startPoint;
-            computerAimPoint.x = LevelDefinition.LastShotEndX;
-            computerAimPoint.y = LevelDefinition.LastShotEndY;
+            computerAimPoint.x = _networkManager.levelDef.LastShotEndX;
+            computerAimPoint.y = _networkManager.levelDef.LastShotEndY;
 
         }
         else
@@ -55,19 +66,18 @@ public class AimLine : MonoBehaviour
             computerAimPointWithoutRandomness = new Vector3(playerRight.transform.position.x + 5.0f, playerRight.transform.position.y, playerRight.transform.position.z);
         }
 
-        lineRender = gameObject.GetComponent<LineRenderer>();
         lineRender.SetPosition(0, startPoint);
         lineRender.SetPosition(1, endPoint);
     }
 
     void Update()
     {
-        if (LevelDefinition.gameType == GameType.Computer)
+        if (_networkManager.levelDef.gameType == GameType.Computer)
         {
             #region LeftPlayer
             // Left Player
             // Only allow dragging when the camera is not paused and on it's target(not moving) and we aren't shooting. Also when game state is playing.
-            if (!IsShooting && !cameraFollow.Paused && !cameraFollow.IsMoving() && LevelDefinition.gameState == GameState.Playing && LevelDefinition.IsPlayerLeftTurn)
+            if (!IsShooting && !cameraFollow.Paused && !cameraFollow.IsMoving() && _networkManager.levelDef.gameState == GameState.Playing && _networkManager.levelDef.IsPlayerLeftTurn)
             {
                 if (Input.GetMouseButton(0))
                 {
@@ -118,7 +128,7 @@ public class AimLine : MonoBehaviour
                     {
                         activeArrow.Shoot(startPoint, endPoint);
                         IsShooting = true;
-                        LevelDefinition.IsPlayerLeftTurn = false;
+                        _networkManager.levelDef.IsPlayerLeftTurn = false;
                         IsValidShot = false;
                         InitializeComputerShot();
                     }
@@ -131,7 +141,7 @@ public class AimLine : MonoBehaviour
             // Translate the start and end points to show the arrow
             // Once in line, shoot
             #region ComputerPlayer
-            else if (!IsShooting && !cameraFollow.Paused && !cameraFollow.IsMoving() && LevelDefinition.gameState == GameState.Playing && !LevelDefinition.IsPlayerLeftTurn)
+            else if (!IsShooting && !cameraFollow.Paused && !cameraFollow.IsMoving() && _networkManager.levelDef.gameState == GameState.Playing && !_networkManager.levelDef.IsPlayerLeftTurn)
             {
                 endPoint = Vector3.MoveTowards(endPoint, computerAimPoint, Time.deltaTime * 5f);
                 if (Vector2.Distance(startPoint, endPoint) > 0)
@@ -167,19 +177,19 @@ public class AimLine : MonoBehaviour
                     activeArrow.Shoot(startPoint, endPoint);
                     IsShooting = true;
                     IsValidShot = false;
-                    LevelDefinition.IsPlayerLeftTurn = true;
+                    _networkManager.levelDef.IsPlayerLeftTurn = true;
                     this.setLine(startPoint, endPoint);
                 }
             }
             #endregion ComputerPlayer
         }
-        else if(LevelDefinition.gameType == GameType.Local)
+        else if(_networkManager.levelDef.gameType == GameType.Local)
         {
             #region HumanVsHuman
             // Left Player
             //if (IsLeftPlayerTurn && !IsShooting)
             // Only allow dragging when the camera is not paused and on it's target(not moving) and we aren't shooting. Also when game state is playing.
-            if (!IsShooting && !cameraFollow.Paused && !cameraFollow.IsMoving() && LevelDefinition.gameState == GameState.Playing)
+            if (!IsShooting && !cameraFollow.Paused && !cameraFollow.IsMoving() && _networkManager.levelDef.gameState == GameState.Playing)
             {
                 if (Input.GetMouseButton(0))
                 {
@@ -231,7 +241,7 @@ public class AimLine : MonoBehaviour
                     {
                         activeArrow.Shoot(startPoint, endPoint);
                         IsShooting = true;
-                        LevelDefinition.IsPlayerLeftTurn = !LevelDefinition.IsPlayerLeftTurn;
+                        _networkManager.levelDef.IsPlayerLeftTurn = !_networkManager.levelDef.IsPlayerLeftTurn;
                         IsValidShot = false;
                     }
                     this.setLine(startPoint, endPoint);
@@ -240,10 +250,10 @@ public class AimLine : MonoBehaviour
 
             #endregion HumanVsHuman
         }
-        else if (LevelDefinition.gameType == GameType.Online)
+        else if (_networkManager.levelDef.gameType == GameType.Online)
         {
             #region ShowingLastShot
-            if (LevelDefinition.gameState == GameState.ShowLastMove && !IsShooting)
+            if (_networkManager.levelDef.gameState == GameState.ShowLastMove && !IsShooting)
             {
                 endPoint = Vector3.MoveTowards(endPoint, computerAimPoint, Time.deltaTime * 5f);
                 if (Vector2.Distance(startPoint, endPoint) > 0)
@@ -279,10 +289,10 @@ public class AimLine : MonoBehaviour
                     if (IsShooting == false)
                     {
                         activeArrow.Shoot(startPoint, endPoint);
-                        LevelDefinition.LastShotEndX = endPoint.x;
-                        LevelDefinition.LastShotEndY = endPoint.y;
-                        LevelDefinition.LastShotStartX = startPoint.x;
-                        LevelDefinition.LastShotStartY = startPoint.y;
+                        _networkManager.levelDef.LastShotEndX = endPoint.x;
+                        _networkManager.levelDef.LastShotEndY = endPoint.y;
+                        _networkManager.levelDef.LastShotStartX = startPoint.x;
+                        _networkManager.levelDef.LastShotStartY = startPoint.y;
                         IsShooting = true;
                         IsValidShot = false;
                         this.setLine(startPoint, endPoint);
@@ -296,9 +306,9 @@ public class AimLine : MonoBehaviour
             if (!IsShooting 
                 && !cameraFollow.Paused 
                 && !cameraFollow.IsMoving() 
-                && LevelDefinition.gameState == GameState.Playing
-                && ((LevelDefinition.IsPlayerLeftTurn && ParseUser.CurrentUser.ObjectId == LevelDefinition.PlayerLeftId)
-                    || (!LevelDefinition.IsPlayerLeftTurn && ParseUser.CurrentUser.ObjectId == LevelDefinition.PlayerRightId))
+                && _networkManager.levelDef.gameState == GameState.Playing
+                && ((_networkManager.levelDef.IsPlayerLeftTurn)
+                    || (!_networkManager.levelDef.IsPlayerLeftTurn))
                 )
             {
                 if (Input.GetMouseButton(0))
@@ -351,14 +361,14 @@ public class AimLine : MonoBehaviour
                     {
                         activeArrow.Shoot(startPoint, endPoint);
                         IsShooting = true;
-                        LevelDefinition.IsPlayerLeftTurn = !LevelDefinition.IsPlayerLeftTurn;
+                        _networkManager.levelDef.IsPlayerLeftTurn = !_networkManager.levelDef.IsPlayerLeftTurn;
                         IsValidShot = false;
 
                         // Save the shot so we can recreate it for the other player to watch (for online)
-                        LevelDefinition.LastShotStartX = startPoint.x;
-                        LevelDefinition.LastShotStartY = startPoint.y;
-                        LevelDefinition.LastShotEndX = endPoint.x;
-                        LevelDefinition.LastShotEndY = endPoint.y;
+                        _networkManager.levelDef.LastShotStartX = startPoint.x;
+                        _networkManager.levelDef.LastShotStartY = startPoint.y;
+                        _networkManager.levelDef.LastShotEndX = endPoint.x;
+                        _networkManager.levelDef.LastShotEndY = endPoint.y;
                     }
                     this.setLine(startPoint, endPoint);
                 }
@@ -389,7 +399,7 @@ public class AimLine : MonoBehaviour
     public void ArrowCollision(float x, float y, bool hitWall, Quaternion arrowRotation)
     {
         // If it's the left player's turn (because the computer just shot and we want to know how that shot did)
-        if (LevelDefinition.IsPlayerLeftTurn)
+        if (_networkManager.levelDef.IsPlayerLeftTurn)
         {
             // 4 states,
             //  No wall, too far

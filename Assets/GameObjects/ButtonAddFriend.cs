@@ -1,9 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
-using Parse;
-using System.Threading.Tasks;
-using Assets.Managers;
 
 public class ButtonAddFriend : MonoBehaviour
 {
@@ -11,22 +7,32 @@ public class ButtonAddFriend : MonoBehaviour
     public Image iconOfFriend;
     public string userIdOfFriend;
     public string usernameOfFriend;
+    private NetworkManager _networkManager;
+
+    void Awake()
+    {
+        if (NetworkManager.StartFromBeginingIfNotStartedYet())
+        {
+            return;
+        }
+        _networkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager>();
+    }
 
     public void addFriend()
     {
-        FriendSearch.addFriend(userIdOfFriend);
-    }
-}
+        _networkManager.addFriend(userIdOfFriend, () =>
+        {
 
-public class ButtonAddFriendContent
-{
-    public Image iconOfFriend;
-    public string userIdOfFriend;
-    public string usernameOfFriend;
-
-    public ButtonAddFriendContent(string userId, string username)
-    {
-        userIdOfFriend = userId;
-        usernameOfFriend = username;
+            button.enabled = false;
+            transform.FindChild("Image");
+            var children = gameObject.GetComponentsInChildren(typeof(Image));
+            foreach (var child in children)
+            {
+                if (child.name == "Image")
+                {
+                    ((Image)child).color = new Color(0, 1, 0);
+                }
+            }
+        });
     }
 }
