@@ -139,6 +139,8 @@ public class AimLineFriend : MonoBehaviour
                     // If we weren't dragging, set the new start point to here. Also set endpoint here because we're dragging now.
                     startPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
                     endPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                    startPoint.z = 2;
+                    endPoint.z = 2;
                     IsDragging = true;
                 }
                 else
@@ -174,7 +176,6 @@ public class AimLineFriend : MonoBehaviour
                 worldCanvas.enabled = false; // Disable the instruction text if they have shot.
 
                 IsDragging = false;
-                // Hide the line with z index
                 lineRender.enabled = false;
 
                 // If it's a valid shot, shoot, otherwise we wanted to just reset

@@ -284,6 +284,10 @@ class NetworkManager : MonoBehaviour
 
     public void InitializeUserName(string username, string userId)
     {
+        if(CurrentUser == null)
+        {
+            CurrentUser = new GameUser();
+        }
         CurrentUser.UserName = username;
         CurrentUser.UserId = userId;
     }
